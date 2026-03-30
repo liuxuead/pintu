@@ -19,6 +19,7 @@
 
     <!-- 拼图选择按钮 -->
     <div class="puzzle-selector">
+        <img id="previewImg" class="preview-img" onclick="showFullImage()" src="" alt="主图预览">
         <button class="select-btn" onclick="showPuzzleSelector()">选择拼图</button>
         <div class="selector-menu" id="selectorMenu">
             <div class="menu-header">
@@ -27,6 +28,11 @@
             </div>
             <div class="menu-content" id="puzzleList"></div>
         </div>
+    </div>
+    
+    <!-- 全屏图片预览 -->
+    <div id="fullImageModal" class="full-image-modal" onclick="hideFullImage()">
+        <img id="fullImage" class="full-image" src="" alt="全屏主图">
     </div>
 
     <script src="js/puzzle-core.js"></script>
