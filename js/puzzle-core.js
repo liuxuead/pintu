@@ -1,14 +1,11 @@
 // ==================== 配置参数 ====================
 const CONFIG = {
-    gridSize: 3,          // 网格数量 (3x3)
-    pieceWidth: 100,      // 单个碎片宽度
-    pieceHeight: 100,     // 单个碎片高度
-    boardWidth: 300,      // 主拼图区宽度
-    boardHeight: 300,     // 主拼图区高度
+    gridSize: 5,          // 网格数量 (5x5)
+    pieceWidth: 80,       // 单个碎片宽度
+    pieceHeight: 80,      // 单个碎片高度
+    boardWidth: 400,      // 主拼图区宽度
+    boardHeight: 400,     // 主拼图区高度
     trayCapacity: 3,      // 每个托盘容量
-    currentPuzzle: 'test', // 当前拼图名称
-    currentPuzzleWidth: 3, // 当前拼图水平块数
-    currentPuzzleHeight: 3, // 当前拼图垂直块数
 };
 
 // ==================== 全局变量 ====================
@@ -27,80 +24,6 @@ function initGame() {
     createBoard();
     loadProgress(); // 尝试恢复上次进度
     setupDragEvents();
-    loadPuzzles(); // 加载拼图列表
-}
-
-// 显示拼图选择器
-function showPuzzleSelector() {
-    console.log('显示拼图选择器');
-    const selectorMenu = document.getElementById('selectorMenu');
-    console.log('选择菜单元素:', selectorMenu);
-    if (selectorMenu) {
-        selectorMenu.classList.add('active');
-        console.log('选择菜单类名:', selectorMenu.className);
-    }
-}
-
-// 隐藏拼图选择器
-function hidePuzzleSelector() {
-    console.log('隐藏拼图选择器');
-    const selectorMenu = document.getElementById('selectorMenu');
-    console.log('选择菜单元素:', selectorMenu);
-    if (selectorMenu) {
-        selectorMenu.classList.remove('active');
-        console.log('选择菜单类名:', selectorMenu.className);
-    }
-}
-
-// 加载拼图列表
-function loadPuzzles() {
-    console.log('加载拼图列表');
-    // 遍历assets目录下的文件夹，获取拼图列表
-    const puzzles = [];
-    
-    // 这里我们手动列出所有的拼图文件夹，实际项目中可以使用Fetch API获取目录内容
-    // 格式: { name: 文件夹名称, width: 水平块数, height: 垂直块数, displayName: 显示名称 }
-    console.log('添加示例拼图选项');
-    puzzles.push({ name: 'test', width: 3, height: 3, displayName: '测试拼图' });
-    
-    // 可以在这里添加更多拼图
-    // puzzles.push({ name: 'example', width: 4, height: 4, displayName: '示例拼图' });
-    
-    console.log('获取菜单内容元素');
-    const puzzleList = document.getElementById('puzzleList');
-    console.log('菜单内容元素:', puzzleList);
-    if (!puzzleList) return;
-    
-    console.log('清空菜单内容');
-    puzzleList.innerHTML = '';
-    
-    console.log('添加拼图选项到菜单');
-    puzzles.forEach(puzzle => {
-        console.log('添加拼图:', puzzle);
-        const puzzleItem = document.createElement('div');
-        puzzleItem.className = 'puzzle-item';
-        puzzleItem.onclick = () => selectPuzzle(puzzle.name, puzzle.width, puzzle.height);
-        
-        puzzleItem.innerHTML = `
-            <h4>${puzzle.displayName}</h4>
-            <p>${puzzle.width} × ${puzzle.height}</p>
-        `;
-        
-        puzzleList.appendChild(puzzleItem);
-        console.log('拼图选项添加成功');
-    });
-    console.log('拼图列表加载完成');
-}
-
-// 选择拼图
-function selectPuzzle(name, width, height) {
-    CONFIG.currentPuzzle = name;
-    CONFIG.currentPuzzleWidth = width;
-    CONFIG.currentPuzzleHeight = height;
-    
-    // 重新初始化游戏
-    initGame();
-    hidePuzzleSelector();
 }
 
 // 创建零件区和托盘
@@ -110,17 +33,14 @@ function createParts() {
     
     // 生成所有碎片
     const allPieces = [];
-    const totalPieces = CONFIG.currentPuzzleWidth * CONFIG.currentPuzzleHeight;
-    for (let i = 0; i < totalPieces; i++) {
-        const row = Math.floor(i / CONFIG.currentPuzzleWidth);
-        const col = i % CONFIG.currentPuzzleWidth;
+    for (let i = 0; i < CONFIG.gridSize * CONFIG.gridSize; i++) {
+        const row = Math.floor(i / CONFIG.gridSize);
+        const col = i % CONFIG.gridSize;
         
         const piece = document.createElement('div');
         piece.className = 'part-item';
         piece.dataset.id = i;
-        // 使用 assets/{puzzleName}_{width}_{height}/pieces 目录下的图片文件
-        piece.style.backgroundImage = `url('assets/${CONFIG.currentPuzzle}_${CONFIG.currentPuzzleWidth}_${CONFIG.currentPuzzleHeight}/pieces/${CONFIG.currentPuzzle}_${row}_${col}.png')`;
-        piece.style.backgroundSize = 'cover';
+        piece.style.backgroundPosition = `-${col * CONFIG.pieceWidth}px -${row * CONFIG.pieceHeight}px`;
         
         // 添加编号显示
         const number = document.createElement('div');
@@ -143,12 +63,6 @@ function createParts() {
         const tray = document.createElement('div');
         tray.className = 'tray';
         
-        // 添加托盘编号
-        const trayNumber = document.createElement('div');
-        trayNumber.className = 'tray-number';
-        trayNumber.textContent = Math.floor(i / CONFIG.trayCapacity) + 1;
-        tray.appendChild(trayNumber);
-        
         const trayPieces = allPieces.slice(i, i + CONFIG.trayCapacity);
         trayPieces.forEach(piece => {
             tray.appendChild(piece);
@@ -167,23 +81,15 @@ function createBoard() {
     const board = document.getElementById('mainBoard');
     board.innerHTML = '';
     
-    // 更新背景图片
-    board.style.backgroundImage = `url('assets/${CONFIG.currentPuzzle}_${CONFIG.currentPuzzleWidth}_${CONFIG.currentPuzzleHeight}/${CONFIG.currentPuzzle}.png')`;
-    
-    // 计算每个槽位的百分比位置
-    const slotSize = 100 / CONFIG.currentPuzzleWidth;
-    
-    for (let row = 0; row < CONFIG.currentPuzzleHeight; row++) {
-        for (let col = 0; col < CONFIG.currentPuzzleWidth; col++) {
+    for (let row = 0; row < CONFIG.gridSize; row++) {
+        for (let col = 0; col < CONFIG.gridSize; col++) {
             const slot = document.createElement('div');
             slot.className = 'puzzle-slot';
             slot.dataset.row = row;
             slot.dataset.col = col;
-            slot.dataset.expectedId = row * CONFIG.currentPuzzleWidth + col;
-            slot.style.left = `${col * slotSize}%`;
-            slot.style.top = `${row * slotSize}%`;
-            slot.style.width = `${slotSize}%`;
-            slot.style.height = `${100 / CONFIG.currentPuzzleHeight}%`;
+            slot.dataset.expectedId = row * CONFIG.gridSize + col;
+            slot.style.left = `${col * CONFIG.pieceWidth}px`;
+            slot.style.top = `${row * CONFIG.pieceHeight}px`;
             
             // 添加槽位编号
             const slotNumber = document.createElement('div');
@@ -214,26 +120,12 @@ function shuffleArray(array) {
 // 更新托盘显示
 function updateTrayDisplay() {
     const container = document.getElementById('partsContainer');
-    if (!container || !trays || trays.length === 0) {
-        console.error('Container or trays not found');
-        return;
-    }
-    
-    // 直接获取托盘的实际宽度，包括所有内边距和边框
-    const trayWidth = trays[0].getBoundingClientRect().width + 20; // 加上间隙
+    const containerWidth = container.offsetWidth;
+    const trayWidth = trays[0].offsetWidth + 20; // 加上间隙
     
     const translateX = -currentTrayIndex * trayWidth;
-    console.log('Update tray display:', { trayWidth, currentTrayIndex, translateX });
-    
-    // 强制重排，确保样式能够正确应用
-    container.offsetHeight;
     container.style.transform = `translateX(${translateX}px)`;
     container.style.transition = 'transform 0.3s ease';
-    
-    // 验证样式是否被正确应用
-    setTimeout(() => {
-        console.log('Container transform:', container.style.transform);
-    }, 100);
 }
 
 // 设置拖拽事件
@@ -242,19 +134,19 @@ function setupDragEvents() {
     
     // 鼠标事件
     container.addEventListener('mousedown', (e) => {
-        isDragging = true;
-        startX = e.clientX;
-        startY = e.clientY;
-        isRightClick = e.button === 2;
-        console.log('Mouse down:', { startX, startY, isRightClick });
-        e.preventDefault(); // 阻止右键菜单
+        if (e.target === container || e.target.classList.contains('tray')) {
+            isDragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            isRightClick = e.button === 2;
+            e.preventDefault(); // 阻止右键菜单
+        }
     });
     
     container.addEventListener('mousemove', (e) => {
         if (isDragging) {
             const deltaX = e.clientX - startX;
             const deltaY = e.clientY - startY;
-            console.log('Mouse move:', { deltaX, deltaY });
             
             // 只处理水平拖拽
             if (Math.abs(deltaX) > Math.abs(deltaY)) {
@@ -266,39 +158,20 @@ function setupDragEvents() {
     container.addEventListener('mouseup', (e) => {
         if (isDragging) {
             const deltaX = e.clientX - startX;
-            console.log('Mouse up:', { deltaX, currentTrayIndex, traysLength: trays.length });
             
-            if (Math.abs(deltaX) > 30) { // 降低拖拽阈值
+            if (Math.abs(deltaX) > 50) { // 拖拽阈值
                 if (deltaX > 0) {
                     // 向右拖拽，显示前一个托盘
                     if (currentTrayIndex > 0) {
                         currentTrayIndex -= isRightClick ? Math.min(2, currentTrayIndex) : 1;
-                        console.log('After right drag:', { currentTrayIndex });
                     }
                 } else {
                     // 向左拖拽，显示后一个托盘
                     if (currentTrayIndex < trays.length - 1) {
                         currentTrayIndex += isRightClick ? Math.min(2, trays.length - 1 - currentTrayIndex) : 1;
-                        console.log('After left drag:', { currentTrayIndex });
                     }
                 }
                 updateTrayDisplay();
-                console.log('Tray display updated');
-            } else {
-                // 拖拽距离很小，认为是点击事件
-                console.log('Click detected, not drag');
-                // 检查是否点击了碎片
-                const clickedPiece = e.target.closest('.part-item');
-                if (clickedPiece) {
-                    console.log('Piece clicked:', clickedPiece.dataset.id);
-                    // 手动触发点击事件
-                    const clickEvent = new MouseEvent('click', {
-                        bubbles: true,
-                        cancelable: true,
-                        view: window
-                    });
-                    clickedPiece.dispatchEvent(clickEvent);
-                }
             }
             
             isDragging = false;
@@ -307,22 +180,21 @@ function setupDragEvents() {
     
     // 触摸事件
     container.addEventListener('touchstart', (e) => {
-        isDragging = true;
-        startX = e.touches[0].clientX;
-        startY = e.touches[0].clientY;
-        console.log('Touch start:', { startX, startY });
-        e.preventDefault(); // 阻止默认行为，防止页面滚动
+        if (e.target === container || e.target.classList.contains('tray')) {
+            isDragging = true;
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+        }
     });
     
     container.addEventListener('touchmove', (e) => {
         if (isDragging) {
             const deltaX = e.touches[0].clientX - startX;
             const deltaY = e.touches[0].clientY - startY;
-            console.log('Touch move:', { deltaX, deltaY });
             
             // 只处理水平拖拽
             if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                e.preventDefault(); // 阻止默认行为，确保流畅的拖拽
+                e.preventDefault();
             }
         }
     });
@@ -330,41 +202,20 @@ function setupDragEvents() {
     container.addEventListener('touchend', (e) => {
         if (isDragging) {
             const deltaX = e.changedTouches[0].clientX - startX;
-            console.log('Touch end:', { deltaX, currentTrayIndex, traysLength: trays.length });
             
-            if (Math.abs(deltaX) > 20) { // 进一步降低拖拽阈值，提高灵敏度
+            if (Math.abs(deltaX) > 50) { // 拖拽阈值
                 if (deltaX > 0) {
                     // 向右拖拽，显示前一个托盘
                     if (currentTrayIndex > 0) {
                         currentTrayIndex -= 1;
-                        console.log('After right touch drag:', { currentTrayIndex });
                     }
                 } else {
                     // 向左拖拽，显示后一个托盘
                     if (currentTrayIndex < trays.length - 1) {
                         currentTrayIndex += 1;
-                        console.log('After left touch drag:', { currentTrayIndex });
                     }
                 }
                 updateTrayDisplay();
-                console.log('Tray display updated');
-            } else {
-                // 触摸距离很小，认为是点击事件
-                console.log('Touch click detected, not drag');
-                // 检查是否点击了碎片
-                const touch = e.changedTouches[0];
-                const clickedElement = document.elementFromPoint(touch.clientX, touch.clientY);
-                const clickedPiece = clickedElement.closest('.part-item');
-                if (clickedPiece) {
-                    console.log('Piece touched:', clickedPiece.dataset.id);
-                    // 手动触发点击事件
-                    const clickEvent = new MouseEvent('click', {
-                        bubbles: true,
-                        cancelable: true,
-                        view: window
-                    });
-                    clickedPiece.dispatchEvent(clickEvent);
-                }
             }
             
             isDragging = false;
@@ -415,15 +266,6 @@ function placePiece(piece, slot) {
     // 将零件放入拼图区
     slot.appendChild(piece);
     slot.classList.add('filled');
-    
-    // 调整碎块大小以适应槽位
-    const slotRect = slot.getBoundingClientRect();
-    piece.style.width = `${slotRect.width}px`;
-    piece.style.height = `${slotRect.height}px`;
-    piece.style.minWidth = 'unset';
-    piece.style.maxWidth = 'unset';
-    piece.style.aspectRatio = 'unset';
-    
     placedCount++;
     saveProgress();
     
