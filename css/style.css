@@ -47,7 +47,9 @@ body { font-family: Arial, sans-serif; background: #f0f0f0; min-height: 100vh; o
     max-width: 100px;
     height: 0;
     padding-bottom: 30%; /* 使用padding-bottom来保持正方形比例 */
-    background-size: cover;
+    background-size: 100% 100%;
+    background-position: center;
+    background-repeat: no-repeat;
     background-color: #e0e0e0;
     border: 2px solid #fff;
     border-radius: 5px;
@@ -112,11 +114,13 @@ body { font-family: Arial, sans-serif; background: #f0f0f0; min-height: 100vh; o
     max-height: 800px;
     background: center/cover no-repeat;
     box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
+    overflow: hidden;
 }
 .puzzle-slot {
     position: absolute;
     border: 1px dashed #ccc;
-    background-size: 100% 100%; /* 整张大图缩放 */
+    box-sizing: border-box;
+    background-size: 100% 100%;
     background-repeat: no-repeat;
     transition: all 0.3s ease;
 }
@@ -247,6 +251,25 @@ body { font-family: Arial, sans-serif; background: #f0f0f0; min-height: 100vh; o
     left: 50%;
     transform: translateX(-50%);
     z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.preview-img {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    cursor: pointer;
+    object-fit: cover;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+.preview-img:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .select-btn {
@@ -362,4 +385,41 @@ body { font-family: Arial, sans-serif; background: #f0f0f0; min-height: 100vh; o
     margin: 0;
     font-size: 14px;
     opacity: 0.8;
+}
+
+/* 全屏图片预览样式 */
+.full-image-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 3000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.full-image-modal.active {
+    display: flex;
+    opacity: 1;
+}
+
+.full-image {
+    max-width: 95%;
+    max-height: 95%;
+    object-fit: contain;
+    border-radius: 10px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    transition: transform 0.3s ease;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+.full-image.swiping {
+    transition: transform 0.1s ease;
 }
