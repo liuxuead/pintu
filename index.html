@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能拼图游戏</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- 零件区 -->
+    <div class="parts-container" id="partsContainer"></div>
+
+    <!-- 主拼图区 -->
+    <div class="main-board">
+        <div class="puzzle-container" id="mainBoard"></div>
+    </div>
+
+
+
+    <!-- 拼图选择按钮 -->
+    <div class="puzzle-selector">
+        <button class="select-btn" onclick="showPuzzleSelector()">选择拼图</button>
+        <div class="selector-menu" id="selectorMenu">
+            <div class="menu-header">
+                <h3>选择拼图</h3>
+                <button class="close-btn" onclick="hidePuzzleSelector()">×</button>
+            </div>
+            <div class="menu-content" id="puzzleList"></div>
+        </div>
+    </div>
+
+    <script src="js/puzzle-core.js"></script>
+</body>
+</html>
