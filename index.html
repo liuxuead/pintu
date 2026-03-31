@@ -7,19 +7,82 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <!-- 零件区 -->
-    <div class="parts-container" id="partsContainer"></div>
-
-    <!-- 主拼图区 -->
-    <div class="main-board">
-        <div class="puzzle-container" id="mainBoard"></div>
+    <!-- 主界面 -->
+    <div class="start-screen" id="startScreen">
+        <h1 class="game-title">智能拼图游戏</h1>
+        <div class="start-content">
+            <!-- 左侧：图片选择 -->
+            <div class="left-panel">
+                <h2 class="panel-title">选择图片</h2>
+                <div class="image-list">
+                    <div class="image-item selected" data-image="assets/sgj.png" onclick="selectImage(this)">
+                        <img src="assets/sgj.png" alt="sgj">
+                        <div class="image-label">sgj</div>
+                    </div>
+                    <div class="image-item" data-image="assets/test.png" onclick="selectImage(this)">
+                        <img src="assets/test.png" alt="test">
+                        <div class="image-label">test</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 右侧：设置区域 -->
+            <div class="right-panel">
+                <h2 class="panel-title">参数设置</h2>
+                <div class="settings-area">
+                    <div class="setting-item">
+                        <label>横向块数:</label>
+                        <input type="number" id="widthInput" value="6" min="2" max="20">
+                    </div>
+                    <div class="setting-item">
+                        <label>纵向块数:</label>
+                        <input type="number" id="heightInput" value="10" min="2" max="20">
+                    </div>
+                    <div class="setting-item checkbox-item">
+                        <label>
+                            <input type="checkbox" id="timerCheckbox" onchange="toggleTimerInput()">
+                            是否计时
+                        </label>
+                    </div>
+                    <div class="setting-item" id="timerTimeContainer" style="display: none;">
+                        <label>计时时间 (分钟):</label>
+                        <input type="number" id="timerTimeInput" value="10" min="1" max="120">
+                    </div>
+                </div>
+                <button class="start-button" onclick="startGame()">开始游戏</button>
+            </div>
+        </div>
     </div>
 
+    <!-- 游戏界面 -->
+    <div class="game-screen" id="gameScreen" style="display: none;">
+        <!-- 零件区 -->
+        <div class="parts-container" id="partsContainer"></div>
 
+        <!-- 预览图区域 -->
+        <div class="preview-area">
+            <div id="gameTimer" class="game-timer">00:00:00</div>
+            <img id="previewImg" class="preview-img" onclick="showFullImage()" src="" alt="主图预览">
+            <button id="hintButton" class="hint-button" onclick="handleHintClick()">
+                <div class="hint-count" id="hintCount">3</div>
+                <div class="hint-timer" id="hintTimer"></div>
+            </button>
+            <div id="returnHint" class="return-hint">双击返回</div>
+            <button id="backToStart" class="back-to-start" ondblclick="backToStartScreen()">返回入口</button>
+        </div>
 
-    <!-- 拼图选择按钮 -->
-    <div class="puzzle-selector">
-        <img id="previewImg" class="preview-img" onclick="showFullImage()" src="" alt="主图预览">
+        <!-- 主拼图区 -->
+        <div class="main-board" id="mainBoardArea">
+            <div class="puzzle-container" id="mainBoard"></div>
+        </div>
+        
+        <!-- 间隔区域 -->
+        <div class="gap-area" id="gapArea"></div>
+        
+        <!-- 子拼图区 -->
+        <div class="sub-board" id="subBoardArea">
+            <div class="puzzle-container" id="subBoard"></div>
+        </div>
     </div>
     
     <!-- 全屏图片预览 -->

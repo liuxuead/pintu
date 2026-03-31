@@ -1,5 +1,5 @@
 // ==================== 配置参数 ====================
-const CONFIG = {
+let CONFIG = {
     gridSize: 3,          // 网格数量 (3x3)
     pieceWidth: 100,      // 单个碎片宽度
     pieceHeight: 100,     // 单个碎片高度
@@ -7,19 +7,182 @@ const CONFIG = {
     boardHeight: 300,     // 主拼图区高度
     trayCapacity: 3,      // 每个托盘容量
     currentPuzzle: 'sgj', // 当前拼图名称
-    currentPuzzleWidth: 3, // 当前拼图水平块数
-    currentPuzzleHeight: 4, // 当前拼图垂直块数
+    currentPuzzleWidth: 6, // 当前拼图水平块数（6）
+    currentPuzzleHeight: 10, // 当前拼图垂直块数（10）
+    currentImagePath: 'assets/sgj.png' // 当前选中的图片路径
+};
+
+// 当前选中的图片
+let selectedImagePath = 'assets/sgj.png';
+
+// 图片选择函数
+function selectImage(element) {
+    // 移除所有选中状态
+    document.querySelectorAll('.image-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+    
+    // 添加选中状态
+    element.classList.add('selected');
+    
+    // 更新选中的图片路径
+    selectedImagePath = element.dataset.image;
+}
+
+// 切换计时时间输入框显示
+function toggleTimerInput() {
+    const checkbox = document.getElementById('timerCheckbox');
+    const container = document.getElementById('timerTimeContainer');
+    
+    if (checkbox.checked) {
+        container.style.display = 'flex';
+    } else {
+        container.style.display = 'none';
+    }
+}
+
+// 格式化时间显示 HH:MM:SS
+function formatTime(seconds) {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+}
+
+// 更新游戏计时器显示
+function updateGameTimerDisplay() {
+    const timerElement = document.getElementById('gameTimer');
+    if (timerElement) {
+        timerElement.textContent = formatTime(remainingTime);
+    }
+}
+
+// 开始游戏计时器
+function startGameTimer() {
+    if (!isTimerEnabled) return;
+    
+    // 清除之前的计时器
+    if (gameTimer) {
+        clearInterval(gameTimer);
+        gameTimer = null;
+    }
+    
+    // 更新显示
+    updateGameTimerDisplay();
+    
+    // 启动新计时器
+    gameTimer = setInterval(() => {
+        remainingTime--;
+        updateGameTimerDisplay();
+        
+        // 时间到！
+        if (remainingTime <= 0) {
+            clearInterval(gameTimer);
+            gameTimer = null;
+            showFailModal();
+        }
+    }, 1000);
+}
+
+// 停止游戏计时器
+function stopGameTimer() {
+    if (gameTimer) {
+        clearInterval(gameTimer);
+        gameTimer = null;
+    }
+}
+
+// 显示挑战失败弹窗
+function showFailModal() {
+    // 检查是否已存在弹窗
+    if (document.getElementById('failModal')) return;
+    
+    const modal = document.createElement('div');
+    modal.id = 'failModal';
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h2 style="color: #e74c3c; margin-bottom: 20px;">挑战失败</h2>
+            <p>很遗憾，时间到了！</p>
+            <p>再接再厉，下次一定能成功！</p>
+            <button class="modal-button" onclick="handleFailConfirm()">返回主界面</button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    modal.style.display = 'flex';
+}
+
+// 处理失败确认
+function handleFailConfirm() {
+    const modal = document.getElementById('failModal');
+    if (modal) {
+        modal.remove();
+    }
+    backToStartScreen();
+}
+
+// ==================== 分区规则配置 ====================
+const PARTITION_RULES = {
+    // X横向分法（最大4）
+    x: {
+        5: [3, 2],
+        6: [3, 3],
+        7: [4, 3],
+        8: [4, 4],
+        9: [3, 3, 3],
+        10: [4, 3, 3],
+        11: [4, 4, 3],
+        12: [4, 4, 4],
+        13: [4, 3, 3, 3],
+        14: [4, 4, 3, 3],
+        15: [4, 4, 4, 3],
+        16: [4, 4, 4, 4]
+    },
+    // Y竖向分法（最大5）
+    y: {
+        6: [3, 3],
+        7: [4, 3],
+        8: [4, 4],
+        9: [5, 4],
+        10: [5, 5],
+        11: [4, 4, 3],
+        12: [4, 4, 4],
+        13: [5, 4, 4],
+        14: [5, 5, 4],
+        15: [5, 5, 5],
+        16: [4, 4, 4, 4],
+        17: [5, 4, 4, 4],
+        18: [5, 5, 4, 4],
+        19: [5, 5, 5, 4],
+        20: [5, 5, 5, 5],
+        21: [5, 4, 4, 4, 4],
+        22: [5, 5, 4, 4, 4],
+        23: [5, 5, 5, 4, 4],
+        24: [5, 5, 5, 5, 4],
+        25: [5, 5, 5, 5, 5]
+    }
 };
 
 // ==================== 全局变量 ====================
 let selectedPiece = null; // 当前选中的零件
 let placedCount = 0;      // 已正确放置的数量
+let currentSubPuzzle = null; // 当前子拼图区域
+let partitionedPieces = {};  // 分区放置状态 { globalId: true/false }
+let placedPiecesData = {};   // 已放置的碎片数据 { globalId: { imageUrl: string, id: number } }
 let trays = [];           // 托盘数组
 let currentTrayIndex = 0; // 当前显示的托盘索引
 let isDragging = false;   // 是否正在拖拽
 let startX = 0;           // 拖拽起始X坐标
 let startY = 0;           // 拖拽起始Y坐标
 let isRightClick = false; // 是否是右键拖拽
+let hintCount = 3;        // 提示次数计数
+let hintTimer = null;     // 提示计时器
+let isHintActive = false; // 提示是否激活
+
+// 游戏计时器相关
+let isTimerEnabled = false; // 是否启用计时
+let gameTimer = null;       // 游戏计时器
+let remainingTime = 0;      // 剩余时间（秒）
 
 // ==================== 初始化函数 ====================
 function initGame() {
@@ -28,6 +191,7 @@ function initGame() {
     loadProgress(); // 尝试恢复上次进度
     setupDragEvents();
     setupFullImageSwipe(); // 设置全屏图片滑动事件
+    setupGapAreaEvents(); // 设置间隔区域事件
 }
 
 
@@ -181,7 +345,7 @@ function createParts() {
         piece.className = 'part-item';
         piece.dataset.id = i;
         // 使用原始图片并通过背景定位实现实时碎块
-        piece.style.backgroundImage = `url('assets/${CONFIG.currentPuzzle}.png')`;
+        piece.style.backgroundImage = `url('${CONFIG.currentImagePath}')`;
         piece.style.backgroundSize = `${CONFIG.currentPuzzleWidth * 100}% ${CONFIG.currentPuzzleHeight * 100}%`;
         piece.style.backgroundPosition = `${(col / (CONFIG.currentPuzzleWidth - 1)) * 100}% ${(row / (CONFIG.currentPuzzleHeight - 1)) * 100}%`;
         
@@ -225,6 +389,251 @@ function createParts() {
     updateTrayDisplay();
 }
 
+// 判断是否需要分区
+function needsPartition() {
+    return CONFIG.currentPuzzleWidth > 4 || CONFIG.currentPuzzleHeight > 5;
+}
+
+// 获取分区规则
+function getPartitionRules(width, height) {
+    const xRules = PARTITION_RULES.x[width];
+    const yRules = PARTITION_RULES.y[height];
+    return { x: xRules || [width], y: yRules || [height] };
+}
+
+// 创建分区网格
+function createPartitionGrid(board, rules) {
+    const grid = document.createElement('div');
+    grid.className = 'partition-grid';
+    
+    let currentY = 0;
+    let partitionIndex = 0;
+    
+    rules.y.forEach((ySize, yIdx) => {
+        let currentX = 0;
+        
+        rules.x.forEach((xSize, xIdx) => {
+            const cell = document.createElement('div');
+            cell.className = 'partition-cell';
+            cell.dataset.partitionIndex = partitionIndex;
+            cell.dataset.xStart = currentX;
+            cell.dataset.xSize = xSize;
+            cell.dataset.yStart = currentY;
+            cell.dataset.ySize = ySize;
+            
+            const cellWidthPercent = (xSize / CONFIG.currentPuzzleWidth) * 100;
+            const cellHeightPercent = (ySize / CONFIG.currentPuzzleHeight) * 100;
+            const cellLeftPercent = (currentX / CONFIG.currentPuzzleWidth) * 100;
+            const cellTopPercent = (currentY / CONFIG.currentPuzzleHeight) * 100;
+            
+            cell.style.left = `${cellLeftPercent}%`;
+            cell.style.top = `${cellTopPercent}%`;
+            cell.style.width = `${cellWidthPercent}%`;
+            cell.style.height = `${cellHeightPercent}%`;
+            
+            // 添加分区标签
+            const label = document.createElement('div');
+            label.className = 'partition-label';
+            label.textContent = partitionIndex + 1;
+            cell.appendChild(label);
+            
+            // 双击进入子拼图区
+            cell.addEventListener('dblclick', (e) => {
+                e.stopPropagation();
+                enterSubPuzzle(partitionIndex, cell.dataset);
+            });
+            
+            grid.appendChild(cell);
+            
+            currentX += xSize;
+            partitionIndex++;
+        });
+        
+        currentY += ySize;
+    });
+    
+    board.appendChild(grid);
+}
+
+// 进入子拼图区
+function enterSubPuzzle(index, data) {
+    currentSubPuzzle = {
+        index,
+        xStart: parseInt(data.xStart),
+        xSize: parseInt(data.xSize),
+        yStart: parseInt(data.yStart),
+        ySize: parseInt(data.ySize)
+    };
+    
+    // 隐藏主拼图区，显示子拼图区和间隔区域
+    document.getElementById('mainBoardArea').classList.add('hidden');
+    document.getElementById('subBoardArea').classList.add('active');
+    document.getElementById('gapArea').classList.add('active');
+    
+    // 显示返回提示
+    const returnHint = document.getElementById('returnHint');
+    if (returnHint) {
+        returnHint.classList.add('visible');
+    }
+    
+    // 隐藏返回入口按钮
+    const backToStartBtn = document.getElementById('backToStart');
+    if (backToStartBtn) {
+        backToStartBtn.style.display = 'none';
+    }
+    
+    // 创建子拼图区
+    createSubBoard();
+}
+
+// 返回主拼图区
+function returnToMainBoard() {
+    currentSubPuzzle = null;
+    
+    // 隐藏子拼图区和间隔区域，显示主拼图区
+    document.getElementById('mainBoardArea').classList.remove('hidden');
+    document.getElementById('subBoardArea').classList.remove('active');
+    document.getElementById('gapArea').classList.remove('active');
+    
+    // 隐藏返回提示
+    const returnHint = document.getElementById('returnHint');
+    if (returnHint) {
+        returnHint.classList.remove('visible');
+    }
+    
+    // 显示返回入口按钮
+    const backToStartBtn = document.getElementById('backToStart');
+    if (backToStartBtn) {
+        backToStartBtn.style.display = 'flex';
+    }
+    
+    // 重新渲染主拼图区，显示已完成的分区
+    createBoard();
+}
+
+// 创建子拼图区
+function createSubBoard() {
+    const board = document.getElementById('subBoard');
+    board.innerHTML = '';
+    
+    const { xStart, xSize, yStart, ySize } = currentSubPuzzle;
+    
+    // 计算每个槽位的百分比位置
+    const slotWidthPercent = 100 / xSize;
+    const slotHeightPercent = 100 / ySize;
+    
+    for (let localRow = 0; localRow < ySize; localRow++) {
+        for (let localCol = 0; localCol < xSize; localCol++) {
+            const globalRow = yStart + localRow;
+            const globalCol = xStart + localCol;
+            const globalId = globalRow * CONFIG.currentPuzzleWidth + globalCol;
+            
+            const slot = document.createElement('div');
+            slot.className = 'puzzle-slot';
+            slot.dataset.row = localRow;
+            slot.dataset.col = localCol;
+            slot.dataset.globalId = globalId;
+            slot.style.left = `${localCol * slotWidthPercent}%`;
+            slot.style.top = `${localRow * slotHeightPercent}%`;
+            slot.style.width = `${slotWidthPercent}%`;
+            slot.style.height = `${slotHeightPercent}%`;
+            
+            // 检查是否已放置，如果是，显示碎片
+            if (placedPiecesData[globalId]) {
+                slot.classList.add('filled');
+                const piece = createPlacedPiece(placedPiecesData[globalId]);
+                slot.appendChild(piece);
+            } else {
+                // 未放置时显示编号
+                const slotNumber = document.createElement('div');
+                slotNumber.className = 'slot-number';
+                slotNumber.textContent = globalId + 1;
+                slot.appendChild(slotNumber);
+            }
+            
+            // 点击放置逻辑（只在未放置时有效）
+            if (!placedPiecesData[globalId]) {
+                slot.addEventListener('click', (e) => handleSubSlotClick(e, globalId));
+                slot.addEventListener('mouseenter', () => {
+                    if (selectedPiece) slot.classList.add('highlight');
+                });
+                slot.addEventListener('mouseleave', () => slot.classList.remove('highlight'));
+            }
+            
+            board.appendChild(slot);
+        }
+    }
+}
+
+// 处理子拼图区的槽位点击
+function handleSubSlotClick(e, globalId) {
+    const targetSlot = e.currentTarget;
+    if (!selectedPiece || targetSlot.classList.contains('filled')) return;
+    
+    const actualId = parseInt(selectedPiece.dataset.id);
+    
+    if (actualId === globalId) {
+        // 正确位置 -> 执行放置
+        placeSubPiece(selectedPiece, targetSlot, globalId);
+    } else {
+        // 错误位置 -> 震动提示
+        targetSlot.classList.add('shake');
+        setTimeout(() => targetSlot.classList.remove('shake'), 500);
+    }
+}
+
+// 放置子拼图碎片
+function placeSubPiece(piece, slot, globalId) {
+    piece.remove();
+    slot.appendChild(piece);
+    slot.classList.add('filled');
+    
+    // 调整碎块大小
+    const slotRect = slot.getBoundingClientRect();
+    piece.style.width = `${slotRect.width}px`;
+    piece.style.height = `${slotRect.height}px`;
+    piece.style.minWidth = 'unset';
+    piece.style.maxWidth = 'unset';
+    
+    // 保存分区放置状态和碎片数据
+    partitionedPieces[globalId] = true;
+    placedPiecesData[globalId] = {
+        imageUrl: piece.style.backgroundImage,
+        id: parseInt(piece.dataset.id)
+    };
+    
+    // 清除选择状态
+    piece.classList.remove('selected');
+    selectedPiece = null;
+    
+    // 检查分区是否完成
+    checkPartitionComplete();
+    
+    saveProgress();
+}
+
+// 检查分区是否完成
+function checkPartitionComplete() {
+    const { xStart, xSize, yStart, ySize } = currentSubPuzzle;
+    let allPlaced = true;
+    
+    for (let row = yStart; row < yStart + ySize; row++) {
+        for (let col = xStart; col < xStart + xSize; col++) {
+            const globalId = row * CONFIG.currentPuzzleWidth + col;
+            if (!partitionedPieces[globalId]) {
+                allPlaced = false;
+                break;
+            }
+        }
+        if (!allPlaced) break;
+    }
+    
+    if (allPlaced) {
+        // 分区完成，可以自动返回或等待用户返回
+        console.log('分区完成！');
+    }
+}
+
 // 创建主拼图区网格
 function createBoard() {
     const board = document.getElementById('mainBoard');
@@ -233,41 +642,108 @@ function createBoard() {
     // 更新主图预览
     const previewImg = document.getElementById('previewImg');
     if (previewImg) {
-        previewImg.src = `assets/${CONFIG.currentPuzzle}.png`;
+        previewImg.src = CONFIG.currentImagePath;
     }
     
-    // 计算每个槽位的百分比位置
+    // 先创建所有小格子
     const slotWidthPercent = 100 / CONFIG.currentPuzzleWidth;
     const slotHeightPercent = 100 / CONFIG.currentPuzzleHeight;
     
     for (let row = 0; row < CONFIG.currentPuzzleHeight; row++) {
         for (let col = 0; col < CONFIG.currentPuzzleWidth; col++) {
+            const globalId = row * CONFIG.currentPuzzleWidth + col;
             const slot = document.createElement('div');
             slot.className = 'puzzle-slot';
             slot.dataset.row = row;
             slot.dataset.col = col;
-            slot.dataset.expectedId = row * CONFIG.currentPuzzleWidth + col;
+            slot.dataset.expectedId = globalId;
             slot.style.left = `${col * slotWidthPercent}%`;
             slot.style.top = `${row * slotHeightPercent}%`;
             slot.style.width = `${slotWidthPercent}%`;
             slot.style.height = `${slotHeightPercent}%`;
             
-            // 添加槽位编号
-            const slotNumber = document.createElement('div');
-            slotNumber.className = 'slot-number';
-            slotNumber.textContent = row * CONFIG.currentPuzzleWidth + col + 1;
-            slot.appendChild(slotNumber);
+            // 如果已放置，显示碎片
+            if (placedPiecesData[globalId]) {
+                slot.classList.add('filled');
+                const piece = createPlacedPiece(placedPiecesData[globalId]);
+                slot.appendChild(piece);
+            } else {
+                // 只在未放置时显示编号
+                const slotNumber = document.createElement('div');
+                slotNumber.className = 'slot-number';
+                slotNumber.textContent = globalId + 1;
+                slot.appendChild(slotNumber);
+            }
             
-            // 点击放置逻辑
+            board.appendChild(slot);
+        }
+    }
+    
+    // 判断是否需要分区
+    if (needsPartition()) {
+        const rules = getPartitionRules(CONFIG.currentPuzzleWidth, CONFIG.currentPuzzleHeight);
+        
+        // 创建分区网格（在小格子之上）
+        createPartitionGrid(board, rules);
+        
+        // 渲染已完成的分区
+        renderCompletedPartitions(board, rules);
+    } else {
+        // 不需要分区，给小格子添加点击事件
+        const slots = board.querySelectorAll('.puzzle-slot');
+        slots.forEach(slot => {
             slot.addEventListener('click', handleSlotClick);
             slot.addEventListener('mouseenter', () => {
                 if (selectedPiece) slot.classList.add('highlight');
             });
             slot.addEventListener('mouseleave', () => slot.classList.remove('highlight'));
-            
-            board.appendChild(slot);
-        }
+        });
     }
+}
+
+// 创建已放置的碎片元素
+function createPlacedPiece(data) {
+    const piece = document.createElement('div');
+    piece.className = 'part-item';
+    piece.dataset.id = data.id;
+    piece.style.backgroundImage = data.imageUrl;
+    piece.style.backgroundSize = 'cover';
+    piece.style.backgroundPosition = 'center';
+    piece.style.backgroundRepeat = 'no-repeat';
+    piece.style.width = '100%';
+    piece.style.height = '100%';
+    piece.style.minWidth = 'unset';
+    piece.style.maxWidth = 'unset';
+    return piece;
+}
+
+// 渲染已完成的分区
+function renderCompletedPartitions(board, rules) {
+    const partitionCells = board.querySelectorAll('.partition-cell');
+    
+    partitionCells.forEach(cell => {
+        const index = parseInt(cell.dataset.partitionIndex);
+        const xStart = parseInt(cell.dataset.xStart);
+        const xSize = parseInt(cell.dataset.xSize);
+        const yStart = parseInt(cell.dataset.yStart);
+        const ySize = parseInt(cell.dataset.ySize);
+        
+        let allPlaced = true;
+        for (let row = yStart; row < yStart + ySize; row++) {
+            for (let col = xStart; col < xStart + xSize; col++) {
+                const globalId = row * CONFIG.currentPuzzleWidth + col;
+                if (!partitionedPieces[globalId]) {
+                    allPlaced = false;
+                    break;
+                }
+            }
+            if (!allPlaced) break;
+        }
+        
+        if (allPlaced) {
+            cell.classList.add('completed');
+        }
+    });
 }
 
 // 随机打乱数组
@@ -476,6 +952,9 @@ function handleSlotClick(e) {
 
 // ==================== 公共放置函数（核心）====================
 function placePiece(piece, slot) {
+    // 获取全局ID
+    const globalId = parseInt(slot.dataset.expectedId);
+    
     // 关键操作：立即从零件区移除该元素
     piece.remove();
     
@@ -493,6 +972,15 @@ function placePiece(piece, slot) {
     piece.style.paddingBottom = '0';
     // 保持背景定位和大小正确
     piece.style.backgroundSize = `${CONFIG.currentPuzzleWidth * 100}% ${CONFIG.currentPuzzleHeight * 100}%`;
+    
+    // 保存放置状态和碎片数据
+    if (!needsPartition()) {
+        partitionedPieces[globalId] = true;
+        placedPiecesData[globalId] = {
+            imageUrl: piece.style.backgroundImage,
+            id: parseInt(piece.dataset.id)
+        };
+    }
     
     placedCount++;
     saveProgress();
@@ -512,7 +1000,9 @@ function placePiece(piece, slot) {
 function saveProgress() {
     const state = {
         placedIds: Array.from(document.querySelectorAll('.puzzle-slot.filled .part-item')).map(el => el.dataset.id),
-        totalPlaced: placedCount
+        totalPlaced: placedCount,
+        partitionedPieces: partitionedPieces,
+        placedPiecesData: placedPiecesData
     };
     localStorage.setItem('puzzle_game_save', JSON.stringify(state));
 }
@@ -523,29 +1013,44 @@ function loadProgress() {
     
     const state = JSON.parse(saved);
     placedCount = state.totalPlaced || 0;
+    partitionedPieces = state.partitionedPieces || {};
+    placedPiecesData = state.placedPiecesData || {};
     
-    // 恢复已放置的零件
-    state.placedIds.forEach(id => {
-        const piece = document.querySelector(`.part-item[data-id="${id}"]`);
-        const targetSlot = document.querySelector(`.puzzle-slot[data-expected-id="${id}"]`);
-        if (piece && targetSlot && !targetSlot.contains(piece)) {
-            targetSlot.appendChild(piece);
-            targetSlot.classList.add('filled');
-        }
-    });
+    // 恢复已放置的零件（仅在非分区模式下）
+    if (!needsPartition()) {
+        state.placedIds.forEach(id => {
+            const piece = document.querySelector(`.part-item[data-id="${id}"]`);
+            const targetSlot = document.querySelector(`.puzzle-slot[data-expected-id="${id}"]`);
+            if (piece && targetSlot && !targetSlot.contains(piece)) {
+                targetSlot.appendChild(piece);
+                targetSlot.classList.add('filled');
+            }
+        });
+    }
 }
 
 // ==================== 重置游戏 ====================
 function resetGame() {
+    // 停止游戏计时器
+    stopGameTimer();
+    
     localStorage.removeItem('puzzle_game_save');
     placedCount = 0;
     selectedPiece = null;
     currentTrayIndex = 0;
+    currentSubPuzzle = null;
+    partitionedPieces = {};
+    placedPiecesData = {};
+    isTimerEnabled = false;
+    remainingTime = 0;
     initGame();
 }
 
 // ==================== 胜利弹窗 ====================
 function showWinModal() {
+    // 停止游戏计时器
+    stopGameTimer();
+    
     const modal = document.createElement('div');
     modal.className = 'modal';
     modal.innerHTML = `
@@ -566,5 +1071,214 @@ function showWinModal() {
     });
 }
 
+// 设置间隔区域事件
+function setupGapAreaEvents() {
+    const gapArea = document.getElementById('gapArea');
+    const returnHint = document.getElementById('returnHint');
+    
+    if (gapArea) {
+        // 双击返回
+        gapArea.addEventListener('dblclick', (e) => {
+            e.stopPropagation();
+            if (currentSubPuzzle) {
+                returnToMainBoard();
+            }
+        });
+        
+        // 单击也返回（更方便）
+        gapArea.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (currentSubPuzzle) {
+                returnToMainBoard();
+            }
+        });
+    }
+    
+    if (returnHint) {
+        // 单击返回提示也返回
+        returnHint.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (currentSubPuzzle) {
+                returnToMainBoard();
+            }
+        });
+        
+        // 双击返回提示也返回
+        returnHint.addEventListener('dblclick', (e) => {
+            e.stopPropagation();
+            if (currentSubPuzzle) {
+                returnToMainBoard();
+            }
+        });
+    }
+}
+
+// ==================== 提示按钮功能 ====================
+function handleHintClick() {
+    if (isHintActive || hintCount <= 0) return;
+    
+    const button = document.getElementById('hintButton');
+    const countDisplay = document.getElementById('hintCount');
+    const timerDisplay = document.getElementById('hintTimer');
+    
+    // 根据计数确定倒计时秒数
+    let seconds;
+    switch (hintCount) {
+        case 3:
+            seconds = 10;
+            break;
+        case 2:
+            seconds = 8;
+            break;
+        case 1:
+            seconds = 5;
+            break;
+        default:
+            return;
+    }
+    
+    // 激活提示状态
+    isHintActive = true;
+    button.classList.add('active');
+    
+    // 显示编号
+    showPieceNumbers();
+    
+    // 开始倒计时
+    let remaining = seconds;
+    timerDisplay.textContent = remaining + 's';
+    
+    hintTimer = setInterval(() => {
+        remaining--;
+        timerDisplay.textContent = remaining + 's';
+        
+        if (remaining <= 0) {
+            // 时间到
+            clearInterval(hintTimer);
+            hintTimer = null;
+            isHintActive = false;
+            button.classList.remove('active');
+            timerDisplay.textContent = '';
+            
+            // 隐藏编号
+            hidePieceNumbers();
+            
+            // 减少计数
+            hintCount--;
+            countDisplay.textContent = hintCount;
+            
+            // 如果计数为0，禁用按钮
+            if (hintCount <= 0) {
+                button.classList.add('disabled');
+            }
+        }
+    }, 1000);
+}
+
+// 显示托盘碎块编号
+function showPieceNumbers() {
+    const numbers = document.querySelectorAll('.piece-number');
+    numbers.forEach(num => {
+        num.classList.add('visible');
+    });
+}
+
+// 隐藏托盘碎块编号
+function hidePieceNumbers() {
+    const numbers = document.querySelectorAll('.piece-number');
+    numbers.forEach(num => {
+        num.classList.remove('visible');
+    });
+}
+
 // ==================== 启动游戏 ====================
-window.addEventListener('DOMContentLoaded', initGame);
+// 开始游戏函数
+function startGame() {
+    // 读取用户设置的参数
+    const widthInput = document.getElementById('widthInput');
+    const heightInput = document.getElementById('heightInput');
+    const timerCheckbox = document.getElementById('timerCheckbox');
+    const timerTimeInput = document.getElementById('timerTimeInput');
+    
+    let width = 6;
+    let height = 10;
+    
+    if (widthInput && heightInput) {
+        width = parseInt(widthInput.value) || 6;
+        height = parseInt(heightInput.value) || 10;
+    }
+    
+    // 检测是否超出范围
+    if (width > 16 || height > 25) {
+        showAlertModal('超出范围，无法实现切割');
+        return;
+    }
+    
+    CONFIG.currentPuzzleWidth = width;
+    CONFIG.currentPuzzleHeight = height;
+    
+    // 读取计时设置
+    isTimerEnabled = timerCheckbox && timerCheckbox.checked;
+    if (isTimerEnabled && timerTimeInput) {
+        const minutes = parseInt(timerTimeInput.value) || 10;
+        remainingTime = minutes * 60;
+    } else {
+        remainingTime = 0;
+    }
+    
+    // 更新当前图片路径
+    CONFIG.currentImagePath = selectedImagePath;
+    
+    // 隐藏主界面，显示游戏界面
+    document.getElementById('startScreen').style.display = 'none';
+    document.getElementById('gameScreen').style.display = 'block';
+    
+    // 初始化游戏
+    initGame();
+    
+    // 如果启用了计时，开始计时器
+    if (isTimerEnabled) {
+        startGameTimer();
+    }
+}
+
+// 显示提示弹窗
+function showAlertModal(message) {
+    // 检查是否已存在弹窗
+    if (document.getElementById('alertModal')) return;
+    
+    const modal = document.createElement('div');
+    modal.id = 'alertModal';
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h2 style="color: #f39c12; margin-bottom: 20px;">提示</h2>
+            <p>${message}</p>
+            <button class="modal-button" style="background: linear-gradient(135deg, #f39c12, #e67e22);" onclick="closeAlertModal()">知道了</button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    modal.style.display = 'flex';
+}
+
+// 关闭提示弹窗
+function closeAlertModal() {
+    const modal = document.getElementById('alertModal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// 返回入口界面函数
+function backToStartScreen() {
+    // 隐藏游戏界面，显示主界面
+    document.getElementById('gameScreen').style.display = 'none';
+    document.getElementById('startScreen').style.display = 'flex';
+    
+    // 重置游戏状态
+    resetGame();
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    // 页面加载时不自动初始化游戏，等待用户点击开始按钮
+});
