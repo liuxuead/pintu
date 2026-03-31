@@ -9,10 +9,6 @@ const CONFIG = {
     currentPuzzle: 'sgj', // 当前拼图名称
     currentPuzzleWidth: 3, // 当前拼图水平块数
     currentPuzzleHeight: 4, // 当前拼图垂直块数
-    timer: null,          // 计时器
-    timeLeft: 60,         // 剩余时间
-    isTimerEnabled: false, // 是否启用计时器
-    isLandscapeEnabled: false, // 是否支持横屏
 };
 
 // ==================== 全局变量 ====================
@@ -31,31 +27,10 @@ function initGame() {
     createBoard();
     loadProgress(); // 尝试恢复上次进度
     setupDragEvents();
-    loadPuzzles(); // 加载拼图列表
     setupFullImageSwipe(); // 设置全屏图片滑动事件
 }
 
-// 显示拼图选择器
-function showPuzzleSelector() {
-    console.log('显示拼图选择器');
-    const selectorMenu = document.getElementById('selectorMenu');
-    console.log('选择菜单元素:', selectorMenu);
-    if (selectorMenu) {
-        selectorMenu.classList.add('active');
-        console.log('选择菜单类名:', selectorMenu.className);
-    }
-}
 
-// 隐藏拼图选择器
-function hidePuzzleSelector() {
-    console.log('隐藏拼图选择器');
-    const selectorMenu = document.getElementById('selectorMenu');
-    console.log('选择菜单元素:', selectorMenu);
-    if (selectorMenu) {
-        selectorMenu.classList.remove('active');
-        console.log('选择菜单类名:', selectorMenu.className);
-    }
-}
 
 // 显示全屏图片
 function showFullImage() {
@@ -190,139 +165,25 @@ function setupFullImageSwipe() {
     });
 }
 
-// 加载拼图列表
-function loadPuzzles() {
-    console.log('加载拼图列表');
-    const puzzleList = document.getElementById('puzzleList');
-    console.log('菜单内容元素:', puzzleList);
-    if (!puzzleList) return;
-    
-    console.log('清空菜单内容');
-    puzzleList.innerHTML = '';
-    
-    // 尝试通过Fetch API获取assets目录下的文件夹
-    console.log('尝试获取assets目录内容');
-    
-    // 本地运行时使用的默认拼图列表
-    const localPuzzles = [
-        { name: 'sgj', width: 3, height: 4, displayName: '三国杀拼图' },
-        { name: 'test', width: 3, height: 3, displayName: '测试拼图' }
-    ];
-    
-    // 渲染拼图列表的辅助函数
-    function renderPuzzles(puzzles) {
-        console.log('渲染拼图列表:', puzzles);
-        puzzles.forEach(puzzle => {
-            console.log('添加拼图:', puzzle);
-            const puzzleItem = document.createElement('div');
-            puzzleItem.className = 'puzzle-item';
-            puzzleItem.onclick = () => selectPuzzle(puzzle.name, puzzle.width, puzzle.height);
-            
-            puzzleItem.innerHTML = `
-                <h4>${puzzle.displayName}</h4>
-                <p>${puzzle.width} × ${puzzle.height}</p>
-            `;
-            
-            puzzleList.appendChild(puzzleItem);
-            console.log('拼图选项添加成功');
-        });
-        console.log('拼图列表加载完成');
-    }
-    
-    // 尝试从GitHub Pages获取目录列表
-    fetch('assets/')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('无法获取目录内容');
-            }
-            return response.text();
-        })
-        .then(html => {
-            console.log('获取到目录内容，开始解析');
-            // 解析HTML响应，提取文件夹名称
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const links = doc.querySelectorAll('a');
-            
-            const puzzles = [];
-            
-            links.forEach(link => {
-                let folderName = link.textContent.trim();
-                // 获取href属性中的文件名
-                const href = link.getAttribute('href');
-                if (href) {
-                    // 从href中提取文件名
-                    const urlParts = href.split('/');
-                    const lastPart = urlParts[urlParts.length - 1];
-                    if (lastPart && lastPart !== '') {
-                        folderName = lastPart.replace(/\/$/, '');
-                    }
-                }
-                
-                // 过滤掉当前目录、上级目录和pieces文件夹
-                if (folderName === '..' || folderName === '.' || folderName === 'pieces' || folderName === '') {
-                    return;
-                }
-                
-                // 解析文件夹名称，格式为 name_width_height
-                const match = folderName.match(/^([a-zA-Z0-9_]+)_(\d+)_(\d+)$/);
-                if (match) {
-                    const name = match[1];
-                    const width = parseInt(match[2]);
-                    const height = parseInt(match[3]);
-                    const displayName = name.charAt(0).toUpperCase() + name.slice(1);
-                    
-                    puzzles.push({ name, width, height, displayName });
-                    console.log('解析到拼图:', { name, width, height, displayName });
-                }
-            });
-            
-            // 如果找到了拼图，渲染它们；否则使用本地默认拼图
-            if (puzzles.length > 0) {
-                console.log('从GitHub Pages加载到拼图');
-                renderPuzzles(puzzles);
-            } else {
-                console.log('未从GitHub Pages加载到拼图，使用本地默认拼图');
-                renderPuzzles(localPuzzles);
-            }
-        })
-        .catch(error => {
-            console.error('获取目录内容失败:', error);
-            console.log('使用本地默认拼图列表');
-            // 如果获取失败，使用本地默认拼图
-            renderPuzzles(localPuzzles);
-        });
-}
-
-// 选择拼图
-function selectPuzzle(name, width, height) {
-    CONFIG.currentPuzzle = name;
-    CONFIG.currentPuzzleWidth = width;
-    CONFIG.currentPuzzleHeight = height;
-    
-    // 重新初始化游戏
-    initGame();
-    hidePuzzleSelector();
-}
-
 // 创建零件区和托盘
 function createParts() {
-    console.log('开始创建零件区和托盘');
     const container = document.getElementById('partsContainer');
-    console.log('零件容器:', container);
     container.innerHTML = '';
     
     // 生成所有碎片
     const allPieces = [];
     const totalPieces = CONFIG.currentPuzzleWidth * CONFIG.currentPuzzleHeight;
-    console.log('总碎片数:', totalPieces);
-    
     for (let i = 0; i < totalPieces; i++) {
+        const row = Math.floor(i / CONFIG.currentPuzzleWidth);
+        const col = i % CONFIG.currentPuzzleWidth;
+        
         const piece = document.createElement('div');
         piece.className = 'part-item';
         piece.dataset.id = i;
+        // 使用原始图片并通过背景定位实现实时碎块
         piece.style.backgroundImage = `url('assets/${CONFIG.currentPuzzle}.png')`;
-        piece.style.backgroundSize = 'cover';
+        piece.style.backgroundSize = `${CONFIG.currentPuzzleWidth * 100}% ${CONFIG.currentPuzzleHeight * 100}%`;
+        piece.style.backgroundPosition = `${(col / (CONFIG.currentPuzzleWidth - 1)) * 100}% ${(row / (CONFIG.currentPuzzleHeight - 1)) * 100}%`;
         
         // 添加编号显示
         const number = document.createElement('div');
@@ -358,55 +219,10 @@ function createParts() {
         
         container.appendChild(tray);
         trays.push(tray);
-        console.log('创建托盘:', trays.length);
     }
     
-    console.log('托盘数量:', trays.length);
     // 初始显示第一个托盘
     updateTrayDisplay();
-    
-    // 加载原始图片
-    const img = new Image();
-    const imageUrl = `assets/${CONFIG.currentPuzzle}_${CONFIG.currentPuzzleWidth}_${CONFIG.currentPuzzleHeight}/${CONFIG.currentPuzzle}.png`;
-    console.log('加载图片:', imageUrl);
-    img.src = imageUrl;
-    
-    img.onload = function() {
-        console.log('图片加载成功:', img.width, 'x', img.height);
-        
-        // 创建临时画布用于切图
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        // 计算每个碎片的宽度和高度
-        const pieceWidth = img.width / CONFIG.currentPuzzleWidth;
-        const pieceHeight = img.height / CONFIG.currentPuzzleHeight;
-        console.log('每个碎片尺寸:', pieceWidth, 'x', pieceHeight);
-        
-        canvas.width = pieceWidth;
-        canvas.height = pieceHeight;
-        
-        // 更新碎片图片
-        document.querySelectorAll('.part-item').forEach(piece => {
-            const id = parseInt(piece.dataset.id);
-            const row = Math.floor(id / CONFIG.currentPuzzleWidth);
-            const col = id % CONFIG.currentPuzzleWidth;
-            
-            // 在画布上绘制当前碎片
-            ctx.clearRect(0, 0, pieceWidth, pieceHeight);
-            ctx.drawImage(img, col * pieceWidth, row * pieceHeight, pieceWidth, pieceHeight, 0, 0, pieceWidth, pieceHeight);
-            
-            // 将画布转换为DataURL
-            const pieceUrl = canvas.toDataURL('image/png');
-            
-            // 更新碎片图片
-            piece.style.backgroundImage = `url('${pieceUrl}')`;
-        });
-    };
-    
-    img.onerror = function() {
-        console.error('图片加载失败:', imageUrl);
-    };
 }
 
 // 创建主拼图区网格
@@ -417,7 +233,7 @@ function createBoard() {
     // 更新主图预览
     const previewImg = document.getElementById('previewImg');
     if (previewImg) {
-        previewImg.src = `assets/${CONFIG.currentPuzzle}_${CONFIG.currentPuzzleWidth}_${CONFIG.currentPuzzleHeight}/${CONFIG.currentPuzzle}.png`;
+        previewImg.src = `assets/${CONFIG.currentPuzzle}.png`;
     }
     
     // 计算每个槽位的百分比位置
@@ -470,8 +286,8 @@ function updateTrayDisplay() {
         return;
     }
     
-    // 使用固定的托盘宽度，确保一致性
-    const trayWidth = 330; // 300px托盘宽度 + 30px间隙
+    // 直接获取托盘的实际宽度，包括所有内边距和边框
+    const trayWidth = trays[0].getBoundingClientRect().width + 20; // 加上间隙
     
     const translateX = -currentTrayIndex * trayWidth;
     console.log('Update tray display:', { trayWidth, currentTrayIndex, translateX });
@@ -493,15 +309,12 @@ function setupDragEvents() {
     
     // 鼠标事件
     container.addEventListener('mousedown', (e) => {
-        // 确保只在托盘区域拖拽，不包括碎片
-        if (!e.target.closest('.part-item')) {
-            isDragging = true;
-            startX = e.clientX;
-            startY = e.clientY;
-            isRightClick = e.button === 2;
-            console.log('Mouse down:', { startX, startY, isRightClick });
-            e.preventDefault(); // 阻止右键菜单
-        }
+        isDragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        isRightClick = e.button === 2;
+        console.log('Mouse down:', { startX, startY, isRightClick });
+        e.preventDefault(); // 阻止右键菜单
     });
     
     container.addEventListener('mousemove', (e) => {
@@ -522,7 +335,7 @@ function setupDragEvents() {
             const deltaX = e.clientX - startX;
             console.log('Mouse up:', { deltaX, currentTrayIndex, traysLength: trays.length });
             
-            if (Math.abs(deltaX) > 20) { // 降低拖拽阈值，提高灵敏度
+            if (Math.abs(deltaX) > 30) { // 降低拖拽阈值
                 if (deltaX > 0) {
                     // 向右拖拽，显示前一个托盘
                     if (currentTrayIndex > 0) {
@@ -561,14 +374,11 @@ function setupDragEvents() {
     
     // 触摸事件
     container.addEventListener('touchstart', (e) => {
-        // 确保只在托盘区域拖拽，不包括碎片
-        if (!e.target.closest('.part-item')) {
-            isDragging = true;
-            startX = e.touches[0].clientX;
-            startY = e.touches[0].clientY;
-            console.log('Touch start:', { startX, startY });
-            e.preventDefault(); // 阻止默认行为，防止页面滚动
-        }
+        isDragging = true;
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        console.log('Touch start:', { startX, startY });
+        e.preventDefault(); // 阻止默认行为，防止页面滚动
     });
     
     container.addEventListener('touchmove', (e) => {
@@ -589,7 +399,7 @@ function setupDragEvents() {
             const deltaX = e.changedTouches[0].clientX - startX;
             console.log('Touch end:', { deltaX, currentTrayIndex, traysLength: trays.length });
             
-            if (Math.abs(deltaX) > 15) { // 进一步降低拖拽阈值，提高灵敏度
+            if (Math.abs(deltaX) > 20) { // 进一步降低拖拽阈值，提高灵敏度
                 if (deltaX > 0) {
                     // 向右拖拽，显示前一个托盘
                     if (currentTrayIndex > 0) {
@@ -681,7 +491,8 @@ function placePiece(piece, slot) {
     piece.style.maxWidth = 'unset';
     piece.style.aspectRatio = 'unset';
     piece.style.paddingBottom = '0';
-    piece.style.backgroundSize = '100% 100%';
+    // 保持背景定位和大小正确
+    piece.style.backgroundSize = `${CONFIG.currentPuzzleWidth * 100}% ${CONFIG.currentPuzzleHeight * 100}%`;
     
     placedCount++;
     saveProgress();
@@ -755,212 +566,5 @@ function showWinModal() {
     });
 }
 
-// ==================== 主界面逻辑 ====================
-
-// 初始化主界面
-function initMainEntry() {
-    console.log('初始化主界面');
-    // 加载默认拼图图标
-    loadPuzzleIcons();
-    
-    // 绑定事件
-    document.getElementById('timerCheckbox').addEventListener('change', function() {
-        document.getElementById('timeSetting').style.display = this.checked ? 'block' : 'none';
-    });
-    
-    // 初始化时隐藏时间设置
-    document.getElementById('timeSetting').style.display = 'none';
-}
-
-// 加载拼图图标
-function loadPuzzleIcons() {
-    console.log('加载拼图图标');
-    const iconContainer = document.getElementById('iconContainer');
-    if (!iconContainer) return;
-    
-    // 本地拼图列表
-    const puzzles = [
-        { name: 'sgj', width: 3, height: 4, displayName: '三国杀拼图', image: 'assets/sgj.png' },
-        { name: 'test', width: 3, height: 3, displayName: '测试拼图', image: 'assets/test.png' }
-    ];
-    
-    puzzles.forEach(puzzle => {
-        const iconItem = document.createElement('div');
-        iconItem.className = 'icon-item';
-        iconItem.dataset.name = puzzle.name;
-        iconItem.dataset.width = puzzle.width;
-        iconItem.dataset.height = puzzle.height;
-        
-        const img = document.createElement('img');
-        img.src = puzzle.image;
-        img.alt = puzzle.displayName;
-        
-        iconItem.appendChild(img);
-        iconItem.addEventListener('click', function() {
-            selectIcon(this);
-        });
-        
-        iconContainer.appendChild(iconItem);
-    });
-}
-
-// 选择图标
-function selectIcon(icon) {
-    console.log('选择图标:', icon.dataset.name);
-    // 清除其他图标的选中状态
-    document.querySelectorAll('.icon-item').forEach(item => item.classList.remove('selected'));
-    // 设置当前图标的选中状态
-    icon.classList.add('selected');
-    
-    // 更新预览图片
-    const selectedImage = document.getElementById('selectedImage');
-    selectedImage.src = icon.querySelector('img').src;
-    
-    // 启用开始游戏按钮
-    document.getElementById('confirm-btn').disabled = false;
-}
-
-// 开始游戏
-function startGame() {
-    console.log('开始游戏');
-    // 获取选中的图标
-    const selectedIcon = document.querySelector('.icon-item.selected');
-    if (!selectedIcon) return;
-    
-    // 获取参数
-    const name = selectedIcon.dataset.name;
-    const width = parseInt(selectedIcon.dataset.width);
-    const height = parseInt(selectedIcon.dataset.height);
-    const isTimerEnabled = document.getElementById('timerCheckbox').checked;
-    const timeLeft = parseInt(document.getElementById('timeInput').value);
-    const isLandscapeEnabled = document.getElementById('landscapeCheckbox').checked;
-    
-    // 更新配置
-    CONFIG.currentPuzzle = name;
-    CONFIG.currentPuzzleWidth = width;
-    CONFIG.currentPuzzleHeight = height;
-    CONFIG.isTimerEnabled = isTimerEnabled;
-    CONFIG.timeLeft = timeLeft;
-    CONFIG.isLandscapeEnabled = isLandscapeEnabled;
-    
-    console.log('配置更新完成:', CONFIG);
-    
-    // 隐藏主界面，显示游戏界面
-    const mainEntry = document.getElementById('mainEntry');
-    const gameInterface = document.getElementById('gameInterface');
-    console.log('主界面元素:', mainEntry);
-    console.log('游戏界面元素:', gameInterface);
-    
-    if (mainEntry && gameInterface) {
-        mainEntry.style.display = 'none';
-        gameInterface.style.display = 'flex';
-        console.log('界面切换完成');
-        
-        // 初始化游戏
-        console.log('开始初始化游戏');
-        initGame();
-        console.log('游戏初始化完成');
-        
-        // 启动倒计时
-        startCountdown();
-        
-        // 如果启用了计时器，启动计时
-        if (isTimerEnabled) {
-            startTimer();
-        }
-    } else {
-        console.error('界面元素未找到');
-    }
-}
-
-// 上传图片
-function uploadImage() {
-    console.log('上传图片');
-    const fileInput = document.getElementById('imageUpload');
-    const file = fileInput.files[0];
-    
-    if (!file) {
-        alert('请选择图片文件');
-        return;
-    }
-    
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const selectedImage = document.getElementById('selectedImage');
-        selectedImage.src = e.target.result;
-        
-        // 启用开始游戏按钮
-        document.getElementById('confirm-btn').disabled = false;
-    };
-    reader.readAsDataURL(file);
-}
-
-// 简单拼图模式
-function startSimplePuzzle() {
-    console.log('简单拼图模式');
-    // 这里可以实现简单拼图模式的逻辑
-    alert('简单拼图模式开发中');
-}
-
-// 返回主界面
-function backToHome() {
-    console.log('返回主界面');
-    // 停止计时器
-    if (CONFIG.timer) {
-        clearInterval(CONFIG.timer);
-        CONFIG.timer = null;
-    }
-    
-    // 重置游戏状态
-    resetGame();
-    
-    // 隐藏游戏界面，显示主界面
-    document.getElementById('gameInterface').style.display = 'none';
-    document.getElementById('mainEntry').style.display = 'grid';
-}
-
-// 开始倒计时
-function startCountdown() {
-    console.log('开始倒计时');
-    const countdownBtn = document.getElementById('countdown-btn');
-    let count = 3;
-    
-    countdownBtn.textContent = count;
-    countdownBtn.classList.remove('disabled');
-    
-    const countdownInterval = setInterval(() => {
-        count--;
-        countdownBtn.textContent = count;
-        
-        if (count <= 0) {
-            clearInterval(countdownInterval);
-            countdownBtn.textContent = '开始';
-            countdownBtn.classList.add('disabled');
-        }
-    }, 1000);
-}
-
-// 启动计时器
-function startTimer() {
-    console.log('启动计时器');
-    const timerDisplay = document.getElementById('timerDisplay');
-    timerDisplay.textContent = `时间: ${CONFIG.timeLeft}秒`;
-    
-    CONFIG.timer = setInterval(() => {
-        CONFIG.timeLeft--;
-        timerDisplay.textContent = `时间: ${CONFIG.timeLeft}秒`;
-        
-        if (CONFIG.timeLeft <= 0) {
-            clearInterval(CONFIG.timer);
-            CONFIG.timer = null;
-            alert('时间到！游戏结束');
-            backToHome();
-        }
-    }, 1000);
-}
-
 // ==================== 启动游戏 ====================
-window.addEventListener('DOMContentLoaded', function() {
-    // 初始化主界面
-    initMainEntry();
-});
+window.addEventListener('DOMContentLoaded', initGame);
