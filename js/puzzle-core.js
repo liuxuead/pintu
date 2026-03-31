@@ -13,7 +13,25 @@ let CONFIG = {
 };
 
 // 当前选中的图片
-let selectedImagePath = 'assets/sgj.png';
+let selectedImagePath = 'assets/fd.png';
+
+// 页面加载时恢复上次选择的图片
+window.addEventListener('DOMContentLoaded', () => {
+    const savedImage = localStorage.getItem('puzzle_game_last_image');
+    if (savedImage) {
+        selectedImagePath = savedImage;
+        
+        // 更新选中状态
+        document.querySelectorAll('.image-item').forEach(item => {
+            item.classList.remove('selected');
+            if (item.dataset.image === savedImage) {
+                item.classList.add('selected');
+            }
+        });
+    }
+    
+    // 页面加载时不自动初始化游戏，等待用户点击开始按钮
+});
 
 // 图片选择函数
 function selectImage(element) {
@@ -27,6 +45,9 @@ function selectImage(element) {
     
     // 更新选中的图片路径
     selectedImagePath = element.dataset.image;
+    
+    // 保存到localStorage
+    localStorage.setItem('puzzle_game_last_image', selectedImagePath);
 }
 
 // 切换计时时间输入框显示
@@ -186,12 +207,28 @@ let remainingTime = 0;      // 剩余时间（秒）
 
 // ==================== 初始化函数 ====================
 function initGame() {
-    createParts();
-    createBoard();
-    loadProgress(); // 尝试恢复上次进度
+    // 初始化显示状态：隐藏返回提示，显示返回入口
+    const returnHint = document.getElementById('returnHint');
+    if (returnHint) {
+        returnHint.style.display = 'none';
+    }
+    const backToStartBtn = document.getElementById('backToStart');
+    if (backToStartBtn) {
+        backToStartBtn.style.display = 'flex';
+    }
+    
+    loadProgress(); // 先尝试恢复上次进度
+    createParts();    // 再创建零件
+    createBoard();    // 再创建拼图区
     setupDragEvents();
     setupFullImageSwipe(); // 设置全屏图片滑动事件
     setupGapAreaEvents(); // 设置间隔区域事件
+    
+    // 如果启用了计时，开始或继续计时器
+    if (isTimerEnabled) {
+        updateGameTimerDisplay();
+        startGameTimer();
+    }
 }
 
 
@@ -338,6 +375,11 @@ function createParts() {
     const allPieces = [];
     const totalPieces = CONFIG.currentPuzzleWidth * CONFIG.currentPuzzleHeight;
     for (let i = 0; i < totalPieces; i++) {
+        // 如果已经放置了，不添加到托盘
+        if (placedPiecesData[i]) {
+            continue;
+        }
+        
         const row = Math.floor(i / CONFIG.currentPuzzleWidth);
         const col = i % CONFIG.currentPuzzleWidth;
         
@@ -473,7 +515,7 @@ function enterSubPuzzle(index, data) {
     // 显示返回提示
     const returnHint = document.getElementById('returnHint');
     if (returnHint) {
-        returnHint.classList.add('visible');
+        returnHint.style.display = 'flex';
     }
     
     // 隐藏返回入口按钮
@@ -498,7 +540,7 @@ function returnToMainBoard() {
     // 隐藏返回提示
     const returnHint = document.getElementById('returnHint');
     if (returnHint) {
-        returnHint.classList.remove('visible');
+        returnHint.style.display = 'none';
     }
     
     // 显示返回入口按钮
@@ -599,6 +641,8 @@ function placeSubPiece(piece, slot, globalId) {
     partitionedPieces[globalId] = true;
     placedPiecesData[globalId] = {
         imageUrl: piece.style.backgroundImage,
+        backgroundSize: piece.style.backgroundSize,
+        backgroundPosition: piece.style.backgroundPosition,
         id: parseInt(piece.dataset.id)
     };
     
@@ -707,8 +751,13 @@ function createPlacedPiece(data) {
     piece.className = 'part-item';
     piece.dataset.id = data.id;
     piece.style.backgroundImage = data.imageUrl;
-    piece.style.backgroundSize = 'cover';
-    piece.style.backgroundPosition = 'center';
+    // 使用保存的完整样式信息
+    if (data.backgroundSize) {
+        piece.style.backgroundSize = data.backgroundSize;
+    }
+    if (data.backgroundPosition) {
+        piece.style.backgroundPosition = data.backgroundPosition;
+    }
     piece.style.backgroundRepeat = 'no-repeat';
     piece.style.width = '100%';
     piece.style.height = '100%';
@@ -978,6 +1027,8 @@ function placePiece(piece, slot) {
         partitionedPieces[globalId] = true;
         placedPiecesData[globalId] = {
             imageUrl: piece.style.backgroundImage,
+            backgroundSize: piece.style.backgroundSize,
+            backgroundPosition: piece.style.backgroundPosition,
             id: parseInt(piece.dataset.id)
         };
     }
@@ -999,10 +1050,15 @@ function placePiece(piece, slot) {
 // ==================== 数据持久化 ====================
 function saveProgress() {
     const state = {
+        imagePath: CONFIG.currentImagePath,
+        puzzleWidth: CONFIG.currentPuzzleWidth,
+        puzzleHeight: CONFIG.currentPuzzleHeight,
         placedIds: Array.from(document.querySelectorAll('.puzzle-slot.filled .part-item')).map(el => el.dataset.id),
         totalPlaced: placedCount,
         partitionedPieces: partitionedPieces,
-        placedPiecesData: placedPiecesData
+        placedPiecesData: placedPiecesData,
+        isTimerEnabled: isTimerEnabled,
+        remainingTime: remainingTime
     };
     localStorage.setItem('puzzle_game_save', JSON.stringify(state));
 }
@@ -1015,18 +1071,8 @@ function loadProgress() {
     placedCount = state.totalPlaced || 0;
     partitionedPieces = state.partitionedPieces || {};
     placedPiecesData = state.placedPiecesData || {};
-    
-    // 恢复已放置的零件（仅在非分区模式下）
-    if (!needsPartition()) {
-        state.placedIds.forEach(id => {
-            const piece = document.querySelector(`.part-item[data-id="${id}"]`);
-            const targetSlot = document.querySelector(`.puzzle-slot[data-expected-id="${id}"]`);
-            if (piece && targetSlot && !targetSlot.contains(piece)) {
-                targetSlot.appendChild(piece);
-                targetSlot.classList.add('filled');
-            }
-        });
-    }
+    isTimerEnabled = state.isTimerEnabled || false;
+    remainingTime = state.remainingTime || 0;
 }
 
 // ==================== 重置游戏 ====================
@@ -1217,17 +1263,42 @@ function startGame() {
     CONFIG.currentPuzzleWidth = width;
     CONFIG.currentPuzzleHeight = height;
     
-    // 读取计时设置
-    isTimerEnabled = timerCheckbox && timerCheckbox.checked;
-    if (isTimerEnabled && timerTimeInput) {
-        const minutes = parseInt(timerTimeInput.value) || 10;
-        remainingTime = minutes * 60;
-    } else {
+    // 更新当前图片路径
+    CONFIG.currentImagePath = selectedImagePath;
+    
+    // 检查是否有保存的进度
+    let hasExistingProgress = false;
+    const saved = localStorage.getItem('puzzle_game_save');
+    if (saved) {
+        const state = JSON.parse(saved);
+        // 检查图片和尺寸是否一致
+        if (state.imagePath === CONFIG.currentImagePath && 
+            state.puzzleWidth === CONFIG.currentPuzzleWidth && 
+            state.puzzleHeight === CONFIG.currentPuzzleHeight) {
+            hasExistingProgress = true;
+        }
+    }
+    
+    // 如果图片或尺寸变了，清除旧进度
+    if (!hasExistingProgress) {
+        localStorage.removeItem('puzzle_game_save');
+        placedCount = 0;
+        partitionedPieces = {};
+        placedPiecesData = {};
+        isTimerEnabled = false;
         remainingTime = 0;
     }
     
-    // 更新当前图片路径
-    CONFIG.currentImagePath = selectedImagePath;
+    // 读取计时设置（如果有旧进度，用旧的；否则用新的）
+    if (!hasExistingProgress) {
+        isTimerEnabled = timerCheckbox && timerCheckbox.checked;
+        if (isTimerEnabled && timerTimeInput) {
+            const minutes = parseInt(timerTimeInput.value) || 10;
+            remainingTime = minutes * 60;
+        } else {
+            remainingTime = 0;
+        }
+    }
     
     // 隐藏主界面，显示游戏界面
     document.getElementById('startScreen').style.display = 'none';
@@ -1236,8 +1307,8 @@ function startGame() {
     // 初始化游戏
     initGame();
     
-    // 如果启用了计时，开始计时器
-    if (isTimerEnabled) {
+    // 如果有旧进度，恢复；否则如果启用了计时，开始计时器
+    if (!hasExistingProgress && isTimerEnabled) {
         startGameTimer();
     }
 }
@@ -1271,14 +1342,15 @@ function closeAlertModal() {
 
 // 返回入口界面函数
 function backToStartScreen() {
+    // 先保存进度再返回
+    saveProgress();
+    
+    // 停止游戏计时器
+    stopGameTimer();
+    
     // 隐藏游戏界面，显示主界面
     document.getElementById('gameScreen').style.display = 'none';
     document.getElementById('startScreen').style.display = 'flex';
     
-    // 重置游戏状态
-    resetGame();
+    // 不调用resetGame()，保留游戏状态
 }
-
-window.addEventListener('DOMContentLoaded', () => {
-    // 页面加载时不自动初始化游戏，等待用户点击开始按钮
-});

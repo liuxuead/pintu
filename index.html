@@ -15,9 +15,21 @@
             <div class="left-panel">
                 <h2 class="panel-title">选择图片</h2>
                 <div class="image-list">
-                    <div class="image-item selected" data-image="assets/sgj.png" onclick="selectImage(this)">
+                    <div class="image-item selected" data-image="assets/fd.png" onclick="selectImage(this)">
+                        <img src="assets/fd.png" alt="fd">
+                        <div class="image-label">fd</div>
+                    </div>
+                    <div class="image-item" data-image="assets/mq.png" onclick="selectImage(this)">
+                        <img src="assets/mq.png" alt="mq">
+                        <div class="image-label">mq</div>
+                    </div>
+                    <div class="image-item" data-image="assets/sgj.png" onclick="selectImage(this)">
                         <img src="assets/sgj.png" alt="sgj">
                         <div class="image-label">sgj</div>
+                    </div>
+                    <div class="image-item" data-image="assets/tcq.png" onclick="selectImage(this)">
+                        <img src="assets/tcq.png" alt="tcq">
+                        <div class="image-label">tcq</div>
                     </div>
                     <div class="image-item" data-image="assets/test.png" onclick="selectImage(this)">
                         <img src="assets/test.png" alt="test">
@@ -67,8 +79,8 @@
                 <div class="hint-count" id="hintCount">3</div>
                 <div class="hint-timer" id="hintTimer"></div>
             </button>
-            <div id="returnHint" class="return-hint">双击返回</div>
-            <button id="backToStart" class="back-to-start" ondblclick="backToStartScreen()">返回入口</button>
+            <button id="returnHint" class="back-to-start" ondblclick="handleDoubleClickReturn()" style="background: linear-gradient(135deg, #3498db, #2980b9); display: none;">返回</button>
+            <button id="backToStart" class="back-to-start" onclick="backToStartScreen()">返回</button>
         </div>
 
         <!-- 主拼图区 -->
