@@ -62,17 +62,17 @@
             <input type="file" id="imageUpload" accept="image/*">
             <button class="upload-btn" id="upload-btn" onclick="uploadImage()">上传</button>
         </div>
+        
+        <!-- 简单拼图按钮 -->
+        <div class="simple-puzzle-section">
+            <button class="simple-puzzle-btn" onclick="startSimplePuzzle()">简单拼图模式</button>
+        </div>
     </div>
 
     <!-- 游戏界面 -->
     <div id="gameInterface" class="game-interface" style="display: none;">
-        <!-- 零件区 -->
+        <!-- 零件区（托盘） -->
         <div class="parts-container" id="partsContainer"></div>
-
-        <!-- 主拼图区 -->
-        <div class="main-board">
-            <div class="puzzle-container" id="mainBoard"></div>
-        </div>
 
         <!-- 中间控件区 -->
         <div class="control-area">
@@ -81,16 +81,16 @@
             <div class="countdown-btn" id="countdown-btn">3</div>
             <div class="back-home" ondblclick="backToHome()">双击此处退回</div>
         </div>
+
+        <!-- 主拼图区 -->
+        <div class="main-board">
+            <div class="puzzle-container" id="mainBoard"></div>
+        </div>
         
         <!-- 全屏图片预览 -->
         <div id="fullImageModal" class="full-image-modal">
             <img id="fullImage" class="full-image" src="" alt="全屏主图">
         </div>
-    </div>
-
-    <!-- 子拼图区 -->
-    <div id="subPuzzle" class="sub-puzzle" style="display: none;">
-        <!-- 子拼图内容 -->
     </div>
 
     <script src="js/puzzle-core.js"></script>

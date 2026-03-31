@@ -200,6 +200,31 @@ body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667e
     box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
 }
 
+/* 简单拼图按钮 */
+.simple-puzzle-section {
+    grid-column: 1 / -1;
+    text-align: center;
+    margin-top: 20px;
+}
+
+.simple-puzzle-btn {
+    padding: 12px 30px;
+    background: linear-gradient(135deg, #9c27b0, #7b1fa2);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.simple-puzzle-btn:hover {
+    background: linear-gradient(135deg, #7b1fa2, #9c27b0);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(156, 39, 176, 0.4);
+}
+
 /* 游戏界面 */
 .game-interface {
     width: 100%;
@@ -207,27 +232,25 @@ body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667e
     padding: 10px;
     display: flex;
     flex-direction: column;
+    align-items: center;
     gap: 60px;
+    position: relative;
+    padding-top: 160px; /* 为零件容器留出空间 */
 }
 
 /* 横屏布局 */
 @media (orientation: landscape) {
-    .game-interface {
-        flex-direction: row;
-        align-items: center;
-    }
-    
     .parts-container {
-        flex-direction: column;
-        height: 80vh;
-        width: auto;
+        flex-direction: row;
+        height: auto;
+        width: 100%;
         max-width: none;
-        max-height: 600px;
+        max-height: none;
     }
     
     .tray {
-        flex: 0 0 200px;
-        min-width: 300px;
+        flex: 0 0 300px;
+        min-width: 250px;
         flex-direction: row;
     }
     
@@ -236,157 +259,25 @@ body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667e
         min-width: 60px;
         max-width: 100px;
     }
-    
-    .main-board {
-        flex: 1;
-        margin: 0;
-    }
-    
-    .control-area {
-        flex-direction: column;
-        gap: 20px;
-        padding: 20px;
-    }
-    
-    .sub-puzzle {
-        flex-direction: row;
-        align-items: center;
-    }
-    
-    .sub-puzzle .parts-container {
-        flex-direction: column;
-        height: 80vh;
-        width: auto;
-        max-width: none;
-        max-height: 600px;
-    }
-    
-    .sub-puzzle .control-area {
-        flex-direction: column;
-        gap: 20px;
-        padding: 20px;
-    }
-}
-
-/* 零件容器样式 */
-.parts-container {
-    display: flex;
-    gap: 20px;
-    padding: 20px;
-    overflow-x: auto;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255,255,255,0.3) transparent;
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
-/* 托盘样式 */
-.tray {
-    flex: 0 0 300px;
-    min-width: 250px;
-    background: rgba(255,255,255,0.9);
-    border-radius: 10px;
-    padding: 15px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    position: relative; /* 为托盘编号提供定位基准 */
-}
-
-/* 零件样式 */
-.part-item {
-    flex: 0 0 30%; /* 每个托盘显示3个碎片，每个碎片占30%宽度 */
-    min-width: 60px;
-    max-width: 100px;
-    height: 0;
-    padding-bottom: 30%; /* 使用padding-bottom来保持正方形比例 */
-    background-size: 100% 100%;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-color: #e0e0e0;
-    border: 2px solid #fff;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
-    user-select: none; /* 防止文本选中 */
-    position: relative;
-    overflow: hidden;
-}
-
-.part-item:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-.part-item.selected { 
-    border-color: #ff6b00; 
-    box-shadow: 0 0 15px rgba(255, 107, 0, 0.7);
-}
-
-/* 编号样式 */
-.piece-number {
-    display: none;
-    position: absolute;
-    top: 5px;
-    left: 5px;
-    background: rgba(0,0,0,0.7);
-    color: white;
-    font-size: 12px;
-    padding: 2px 6px;
-    border-radius: 10px;
-    z-index: 10;
-}
-
-/* 托盘编号样式 */
-.tray-number {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    background: rgba(0,0,0,0.5);
-    color: white;
-    font-size: 10px;
-    padding: 1px 4px;
-    border-radius: 8px;
-    z-index: 5;
-}
-
-/* 主拼图区样式 */
-.main-board {
-    width: 100%;
-    max-width: 1000px;
-    margin: 0 auto;
-    display: flex;
-    justify-content: center;
-}
-
-/* 拼图容器 */
-.puzzle-container {
-    position: relative;
-    width: 90vmin;
-    height: 90vmin;
-    max-width: 800px;
-    max-height: 800px;
-    background: center/cover no-repeat;
-    box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
-    overflow: hidden;
-}
-
-.puzzle-slot {
-    position: absolute;
-    border: 1px dashed #ccc;
-    box-sizing: border-box;
-    background-size: 100% 100%;
-    background-repeat: no-repeat;
-    transition: all 0.3s ease;
 }
 
 /* 中间控件区 */
 .control-area {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
+    gap: 20px;
     width: 100%;
     max-width: 1000px;
-    margin: 0 auto;
-    padding: 0 20px;
+    padding: 20px;
+    z-index: 200;
+    background: rgba(255,255,255,0.9);
+    border-radius: 25px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
 .timer-display {
@@ -397,22 +288,6 @@ body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667e
     font-weight: bold;
     color: #333;
     box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-}
-
-.preview-img {
-    width: 50px;
-    height: 50px;
-    border-radius: 8px;
-    cursor: pointer;
-    object-fit: cover;
-    border: 2px solid #fff;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    transition: all 0.3s ease;
-}
-
-.preview-img:hover {
-    transform: scale(1.1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .countdown-btn {
@@ -467,6 +342,142 @@ body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667e
         gap: 20px;
     }
     
+    .icon-container {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    }
+    
+    .icon-item {
+        width: 80px;
+        height: 80px;
+    }
+}
+
+/* 零件区样式 */
+.parts-container {
+    display: flex;
+    overflow-x: visible;
+    padding: 15px;
+    gap: 20px;
+    scrollbar-width: none; /* 隐藏滚动条 */
+    -ms-overflow-style: none; /* IE兼容 */
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 9999;
+    background: #f0f8ff;
+    transform: translateX(0); /* 初始位置 */
+    transition: transform 0.3s ease; /* 过渡动画 */
+    will-change: transform; /* 优化性能 */
+    width: 100%;
+    height: 150px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border-bottom: 2px solid #bbdefb;
+}
+
+.parts-container::-webkit-scrollbar { display: none; } /* Chrome兼容 */
+
+/* 托盘样式 */
+.tray {
+    flex-shrink: 0;
+    display: flex;
+    gap: 10px;
+    padding: 15px;
+    background: #e3f2fd;
+    border-radius: 10px;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+    width: 85vw;
+    max-width: 320px;
+    border: 1px solid #bbdefb;
+    position: relative;
+    min-height: 100px;
+}
+
+/* 零件样式 */
+.part-item {
+    flex: 0 0 30%; /* 每个托盘显示3个碎片，每个碎片占30%宽度 */
+    min-width: 60px;
+    max-width: 100px;
+    height: 60px;
+    background-size: 100% 100%;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: #e0e0e0;
+    border: 2px solid #fff;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    user-select: none; /* 防止文本选中 */
+    position: relative;
+    overflow: hidden;
+}
+.part-item:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+.part-item.selected { 
+    border-color: #ff6b00; 
+    box-shadow: 0 0 15px rgba(255, 107, 0, 0.7);
+}
+
+/* 编号样式 */
+.piece-number {
+    display: none;
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    font-size: 12px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    z-index: 10;
+}
+
+/* 托盘编号样式 */
+.tray-number {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(0,0,0,0.5);
+    color: white;
+    font-size: 10px;
+    padding: 1px 4px;
+    border-radius: 8px;
+    z-index: 5;
+}
+
+/* 主拼图区样式 */
+.main-board {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f0f0f0;
+    z-index: 1;
+}
+
+/* 拼图容器 */
+.puzzle-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: center/cover no-repeat;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
+    overflow: hidden;
+}
+.puzzle-slot {
+    position: absolute;
+    border: 1px dashed #ccc;
+    box-sizing: border-box;
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    transition: all 0.3s ease;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
     .parts-container {
         padding: 10px;
         gap: 15px;
@@ -483,19 +494,8 @@ body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667e
         max-width: 100px;
     }
     
-    .control-area {
-        flex-wrap: wrap;
-        gap: 10px;
-        justify-content: center;
-    }
-    
-    .icon-container {
-        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-    }
-    
-    .icon-item {
-        width: 80px;
-        height: 80px;
+    .main-board {
+        width: 85vw;
     }
 }
 
@@ -509,14 +509,25 @@ body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667e
         min-width: 50px;
         max-width: 80px;
     }
+    
+    .main-board {
+        width: 90vw;
+    }
+    
+    .select-btn {
+        padding: 10px 20px;
+        font-size: 14px;
+        min-width: 120px;
+    }
+    
+    .puzzle-selector {
+        bottom: 15px;
+    }
 }
-
-/* 槽位填充状态 */
 .puzzle-slot.filled {
     border: 2px solid limegreen;
     background-color: rgba(0,255,0,0.1);
 }
-
 .puzzle-slot.highlight { /* 悬停高亮效果 */
     border-color: #ff6b00;
     background-color: rgba(255, 107, 0, 0.1);
@@ -535,8 +546,30 @@ body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667e
     z-index: 5;
 }
 
+/* 重置按钮 */
+.reset-btn {
+    display: block;
+    margin: 40px auto 20px;
+    padding: 12px 30px;
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.reset-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+}
+
 /* 动画效果 */
-@keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
 .shake { animation: shake 0.5s ease-in-out; }
 
 /* 胜利弹窗 */
@@ -550,7 +583,6 @@ body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667e
     align-items: center;
     z-index: 1000;
 }
-
 .modal-content {
     background: white;
     padding: 40px;
@@ -558,8 +590,153 @@ body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667e
     text-align: center;
     animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
 }
+@keyframes popIn {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
 
-@keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+/* 拼图选择器样式 */
+.puzzle-selector {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.preview-img {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    cursor: pointer;
+    object-fit: cover;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+.preview-img:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.select-btn {
+    padding: 12px 30px;
+    background: linear-gradient(135deg, #2196F3, #1976D2);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+    transition: all 0.3s ease;
+    min-width: 150px;
+    text-align: center;
+}
+
+.select-btn:hover {
+    background: linear-gradient(135deg, #1976D2, #2196F3);
+    box-shadow: 0 6px 16px rgba(33, 150, 243, 0.6);
+    transform: translateY(-2px);
+}
+
+/* 简化的选择菜单样式 */
+.selector-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.selector-menu.active {
+    display: flex;
+}
+
+.menu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 90%;
+    max-width: 500px;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #fff;
+}
+
+.menu-header h3 {
+    color: white;
+    font-size: 24px;
+    margin: 0;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 32px;
+    cursor: pointer;
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.close-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.menu-content {
+    width: 90%;
+    max-width: 500px;
+    max-height: 70vh;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 20px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+.puzzle-item {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 15px;
+    text-align: center;
+    cursor: pointer;
+    color: white;
+}
+
+.puzzle-item:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+.puzzle-item h4 {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+}
+
+.puzzle-item p {
+    margin: 0;
+    font-size: 14px;
+    opacity: 0.8;
+}
 
 /* 全屏图片预览样式 */
 .full-image-modal {
@@ -596,57 +773,4 @@ body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667e
 
 .full-image.swiping {
     transition: transform 0.1s ease;
-}
-
-/* 子拼图区 */
-.sub-puzzle {
-    position: fixed;
-    top: 10px;
-    left: 10px;
-    right: 10px;
-    bottom: 10px;
-    background: rgba(255,255,255,0.95);
-    border-radius: 10px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-    z-index: 4000;
-    display: flex;
-    flex-direction: column;
-    gap: 60px;
-    padding: 20px;
-}
-
-.sub-puzzle .parts-container {
-    margin-top: 20px;
-}
-
-.sub-puzzle .control-area {
-    margin-bottom: 20px;
-}
-
-/* 分区编号样式 */
-.partition-number {
-    position: absolute;
-    bottom: 5px;
-    right: 5px;
-    background: rgba(255, 215, 0, 0.8);
-    color: #333;
-    font-size: 16px;
-    font-weight: bold;
-    padding: 5px 10px;
-    border-radius: 15px;
-    z-index: 20;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-}
-
-/* 子拼图槽位样式 */
-.sub-puzzle-slot {
-    border: 2px solid #ffd700;
-    box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.sub-puzzle-slot:hover {
-    transform: scale(1.02);
-    box-shadow: 0 0 20px rgba(255, 215, 0, 0.7);
 }
