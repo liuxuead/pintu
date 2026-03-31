@@ -67,6 +67,45 @@
                     </div>
                 </div>
                 <button class="start-button" onclick="startGame()">开始游戏</button>
+                <button class="multiplayer-button" onclick="showMultiplayerModal()">双人模式</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 双人模式弹窗 -->
+    <div id="multiplayerModal" class="modal" style="display: none;">
+        <div class="modal-content multiplayer-content">
+            <h2 style="color: #667eea; margin-bottom: 20px;">🎮 双人合作模式</h2>
+            
+            <div id="multiplayerStep1">
+                <p style="margin-bottom: 20px;">选择你的角色</p>
+                <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                    <button class="modal-button" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);" onclick="createRoom()">创建房间</button>
+                    <button class="modal-button" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);" onclick="joinRoom()">加入房间</button>
+                </div>
+                <button class="modal-button" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);" onclick="closeMultiplayerModal()">取消</button>
+            </div>
+            
+            <div id="multiplayerStep2" style="display: none;">
+                <p style="margin-bottom: 10px; font-size: 16px;">这是你的房间码：</p>
+                <p style="margin-bottom: 10px; font-size: 12px; color: #888;">（不用看懂，直接复制发给对方）</p>
+                <div style="background: #f5f5f5; padding: 15px; border-radius: 10px; margin-bottom: 15px; word-break: break-all; font-family: monospace; font-size: 10px; max-height: 120px; overflow-y: auto; line-height: 1.5;" id="roomCodeDisplay"></div>
+                <button class="modal-button" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); margin-bottom: 15px;" onclick="copyRoomCode()">复制房间码</button>
+                <p id="connectionStatus" style="margin-bottom: 15px;">等待对方连接...</p>
+                <div style="margin-bottom: 15px;">
+                    <p style="margin-bottom: 5px;">对方的房间码：</p>
+                    <textarea id="peerCodeInput" style="width: 100%; height: 100px; padding: 10px; border: 2px solid #ddd; border-radius: 10px; font-family: monospace; font-size: 10px; resize: none; line-height: 1.5;"></textarea>
+                </div>
+                <button class="modal-button" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); margin-bottom: 15px;" onclick="submitPeerCode()">连接对方</button>
+                <button class="modal-button" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);" onclick="cancelConnection()">取消</button>
+            </div>
+            
+            <div id="multiplayerStep3" style="display: none;">
+                <p style="margin-bottom: 10px;">输入对方的房间码：</p>
+                <p style="margin-bottom: 10px; font-size: 12px; color: #888;">（粘贴对方发给你的房间码）</p>
+                <textarea id="joinCodeInput" style="width: 100%; height: 100px; padding: 10px; border: 2px solid #ddd; border-radius: 10px; font-family: monospace; font-size: 10px; resize: none; margin-bottom: 15px; line-height: 1.5;"></textarea>
+                <button class="modal-button" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); margin-bottom: 15px;" onclick="submitJoinCode()">加入房间</button>
+                <button class="modal-button" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);" onclick="closeMultiplayerModal()">取消</button>
             </div>
         </div>
     </div>

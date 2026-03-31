@@ -213,7 +213,7 @@ body { font-family: Arial, sans-serif; background: #f0f0f0; min-height: 100vh; o
 }
 
 .start-button {
-    padding: 20px 60px;
+    padding: 20px 30px;
     font-size: 24px;
     font-weight: bold;
     color: white;
@@ -223,7 +223,11 @@ body { font-family: Arial, sans-serif; background: #f0f0f0; min-height: 100vh; o
     cursor: pointer;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
     transition: all 0.3s ease;
-    width: 100%;
+    width: auto;
+    min-width: 120px;
+    line-height: 1.4;
+    white-space: normal;
+    word-break: keep-all;
 }
 
 .start-button:hover {
@@ -233,6 +237,58 @@ body { font-family: Arial, sans-serif; background: #f0f0f0; min-height: 100vh; o
 
 .start-button:active {
     transform: scale(0.95);
+}
+
+.multiplayer-button {
+    padding: 15px 30px;
+    font-size: 18px;
+    font-weight: bold;
+    color: white;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+    transition: all 0.3s ease;
+    width: auto;
+    min-width: 120px;
+    margin-top: 15px;
+    line-height: 1.4;
+    white-space: normal;
+    word-break: keep-all;
+}
+
+.multiplayer-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 30px rgba(102, 126, 234, 0.5);
+}
+
+.multiplayer-button:active {
+    transform: scale(0.95);
+}
+
+.modal-button {
+    padding: 12px 30px;
+    font-size: 16px;
+    font-weight: bold;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+}
+
+.modal-button:hover {
+    transform: scale(1.05);
+}
+
+.modal-button:active {
+    transform: scale(0.95);
+}
+
+.multiplayer-content {
+    text-align: center;
 }
 
 /* 返回入口按钮样式 */
@@ -720,10 +776,10 @@ body { font-family: Arial, sans-serif; background: #f0f0f0; min-height: 100vh; o
     position: fixed;
     top: 0; left: 0;
     width: 100%; height: 100%;
-    background: rgba(0,0,0,0.7);
+    background: rgba(0,0,0,0.8);
     justify-content: center;
     align-items: center;
-    z-index: 1000;
+    z-index: 9999;
 }
 .modal-content {
     background: white;
@@ -731,6 +787,10 @@ body { font-family: Arial, sans-serif; background: #f0f0f0; min-height: 100vh; o
     border-radius: 15px;
     text-align: center;
     animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    max-width: 90%;
+    max-height: 90%;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
 }
 @keyframes popIn {
     0% { transform: scale(0.5); opacity: 0; }
