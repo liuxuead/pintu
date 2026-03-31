@@ -470,8 +470,8 @@ function updateTrayDisplay() {
         return;
     }
     
-    // 直接获取托盘的实际宽度，包括所有内边距和边框
-    const trayWidth = trays[0].getBoundingClientRect().width + 20; // 加上间隙
+    // 使用固定的托盘宽度，确保一致性
+    const trayWidth = 330; // 300px托盘宽度 + 30px间隙
     
     const translateX = -currentTrayIndex * trayWidth;
     console.log('Update tray display:', { trayWidth, currentTrayIndex, translateX });

@@ -357,7 +357,7 @@ body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667e
     display: flex;
     overflow-x: visible;
     padding: 15px;
-    gap: 20px;
+    gap: 30px;
     scrollbar-width: none; /* 隐藏滚动条 */
     -ms-overflow-style: none; /* IE兼容 */
     position: fixed;
@@ -385,9 +385,8 @@ body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667e
     padding: 15px;
     background: #e3f2fd;
     border-radius: 10px;
-    box-shadow: 0 2px 15px rgba(0,0,0,0.1);
-    width: 85vw;
-    max-width: 320px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    width: 300px;
     border: 1px solid #bbdefb;
     position: relative;
     min-height: 100px;
