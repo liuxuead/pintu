@@ -1439,7 +1439,6 @@ function showMultiplayerModal() {
 // 关闭双人模式弹窗
 function closeMultiplayerModal() {
     document.getElementById('multiplayerModal').style.display = 'none';
-    stopScanner();
     resetMultiplayerUI();
 }
 
