@@ -50,6 +50,54 @@ function selectImage(element) {
     localStorage.setItem('puzzle_game_last_image', selectedImagePath);
 }
 
+// 处理图片上传
+function handleImageUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    if (!file.type.startsWith('image/')) {
+        showAlertModal('请选择图片文件！');
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const imageUrl = e.target.result;
+        
+        // 创建新的图片项
+        const imageList = document.querySelector('.image-list');
+        const newImageItem = document.createElement('div');
+        newImageItem.className = 'image-item selected';
+        newImageItem.dataset.image = imageUrl;
+        newImageItem.onclick = function() { selectImage(this); };
+        
+        newImageItem.innerHTML = `
+            <img src="${imageUrl}" alt="上传图片">
+            <div class="image-label">我的图片</div>
+        `;
+        
+        // 移除所有选中状态
+        document.querySelectorAll('.image-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+        
+        // 添加到图片列表
+        imageList.appendChild(newImageItem);
+        
+        // 更新选中的图片
+        selectedImagePath = imageUrl;
+        localStorage.setItem('puzzle_game_last_image', selectedImagePath);
+        
+        // 滚动到底部显示新上传的图片
+        imageList.scrollTop = imageList.scrollHeight;
+    };
+    
+    reader.readAsDataURL(file);
+    
+    // 清空input，允许再次上传相同文件
+    input.value = '';
+}
+
 // 切换计时时间输入框显示
 function toggleTimerInput() {
     const checkbox = document.getElementById('timerCheckbox');

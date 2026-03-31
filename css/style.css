@@ -167,6 +167,33 @@ body { font-family: Arial, sans-serif; background: #f0f0f0; min-height: 100vh; o
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
 }
 
+.add-image-button {
+    width: 60px;
+    height: 60px;
+    font-size: 36px;
+    font-weight: bold;
+    color: white;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    transition: all 0.3s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    line-height: 1;
+}
+
+.add-image-button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+}
+
+.add-image-button:active {
+    transform: scale(0.95);
+}
+
 .checkbox-item {
     flex-direction: row;
     align-items: center;

@@ -43,6 +43,11 @@
                 <h2 class="panel-title">参数设置</h2>
                 <div class="settings-area">
                     <div class="setting-item">
+                        <label>添加图片:</label>
+                        <input type="file" id="imageUpload" accept="image/*" style="display: none;" onchange="handleImageUpload(this)">
+                        <button class="add-image-button" onclick="document.getElementById('imageUpload').click()">+</button>
+                    </div>
+                    <div class="setting-item">
                         <label>横向块数:</label>
                         <input type="number" id="widthInput" value="6" min="2" max="20">
                     </div>
