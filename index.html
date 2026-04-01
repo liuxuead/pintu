@@ -75,15 +75,24 @@
     <!-- 双人模式弹窗 -->
     <div id="multiplayerModal" class="modal" style="display: none;">
         <div class="modal-content multiplayer-content">
-            <h2 style="color: #667eea; margin-bottom: 20px;">🎮 双人合作模式</h2>
+            <h2 style="color: #667eea; margin-bottom: 20px;">🎮 双人模式</h2>
             
             <div id="multiplayerStep1">
+                <p style="margin-bottom: 20px;">选择游戏模式</p>
+                <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                    <button class="modal-button" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);" onclick="selectMode('coop')">合作模式</button>
+                    <button class="modal-button" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);" onclick="selectMode('versus')">对战模式</button>
+                </div>
+                <button class="modal-button" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);" onclick="closeMultiplayerModal()">取消</button>
+            </div>
+            
+            <div id="multiplayerStep1_2" style="display: none;">
                 <p style="margin-bottom: 20px;">选择你的角色</p>
                 <div style="display: flex; gap: 15px; margin-bottom: 20px;">
                     <button class="modal-button" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);" onclick="createRoom()">创建房间</button>
                     <button class="modal-button" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);" onclick="joinRoom()">加入房间</button>
                 </div>
-                <button class="modal-button" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);" onclick="closeMultiplayerModal()">取消</button>
+                <button class="modal-button" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);" onclick="backToModeSelect()">返回</button>
             </div>
             
             <div id="multiplayerStep2" style="display: none;">
@@ -125,6 +134,7 @@
             </button>
             <button id="returnHint" class="back-to-start" ondblclick="handleDoubleClickReturn()" style="background: linear-gradient(135deg, #3498db, #2980b9); display: none;">返回</button>
             <button id="backToStart" class="back-to-start" onclick="backToStartScreen()">返回</button>
+            <button id="viewOpponentButton" class="back-to-start" onclick="viewOpponentProgress()" style="background: linear-gradient(135deg, #f39c12, #e67e22); display: none;">查看对方</button>
         </div>
 
         <!-- 主拼图区 -->

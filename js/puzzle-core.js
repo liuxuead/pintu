@@ -81,15 +81,19 @@ function handleImageUpload(input) {
             item.classList.remove('selected');
         });
         
-        // 添加到图片列表
-        imageList.appendChild(newImageItem);
+        // 添加到图片列表的最前面
+        if (imageList.firstChild) {
+            imageList.insertBefore(newImageItem, imageList.firstChild);
+        } else {
+            imageList.appendChild(newImageItem);
+        }
         
         // 更新选中的图片
         selectedImagePath = imageUrl;
         localStorage.setItem('puzzle_game_last_image', selectedImagePath);
         
-        // 滚动到底部显示新上传的图片
-        imageList.scrollTop = imageList.scrollHeight;
+        // 滚动到顶部显示新上传的图片
+        imageList.scrollTop = 0;
     };
     
     reader.readAsDataURL(file);
@@ -816,6 +820,16 @@ function createPlacedPiece(data) {
     piece.style.height = '100%';
     piece.style.minWidth = 'unset';
     piece.style.maxWidth = 'unset';
+    
+    // 添加玩家标识光效
+    if (data.playerId) {
+        if (data.playerId === 1) {
+            piece.style.boxShadow = '0 0 15px 5px rgba(255, 0, 0, 0.6)';
+        } else if (data.playerId === 2) {
+            piece.style.boxShadow = '0 0 15px 5px rgba(0, 0, 255, 0.6)';
+        }
+    }
+    
     return piece;
 }
 
@@ -1082,7 +1096,8 @@ function placePiece(piece, slot) {
             imageUrl: piece.style.backgroundImage,
             backgroundSize: piece.style.backgroundSize,
             backgroundPosition: piece.style.backgroundPosition,
-            id: parseInt(piece.dataset.id)
+            id: parseInt(piece.dataset.id),
+            playerId: isMultiplayer ? playerId : null
         };
     }
     
@@ -1417,7 +1432,19 @@ function backToStartScreen() {
 let peerConnection = null;
 let dataChannel = null;
 let isMultiplayer = false;
+let multiplayerMode = 'coop'; // 'coop' 或 'versus'
+let playerId = 1; // 1 或 2
 let scannerStream = null;
+
+// 复制房间码
+function copyRoomCode() {
+    const code = document.getElementById('roomCodeDisplay').textContent;
+    navigator.clipboard.writeText(code).then(() => {
+        showAlertModal('房间码已复制！');
+    }).catch(() => {
+        showAlertModal('复制失败，请手动复制');
+    });
+}
 
 // 显示双人模式弹窗
 function showMultiplayerModal() {
@@ -1436,6 +1463,19 @@ function showMultiplayerModal() {
     }
 }
 
+// 选择游戏模式
+function selectMode(mode) {
+    multiplayerMode = mode;
+    document.getElementById('multiplayerStep1').style.display = 'none';
+    document.getElementById('multiplayerStep1_2').style.display = 'block';
+}
+
+// 返回模式选择
+function backToModeSelect() {
+    document.getElementById('multiplayerStep1_2').style.display = 'none';
+    document.getElementById('multiplayerStep1').style.display = 'block';
+}
+
 // 关闭双人模式弹窗
 function closeMultiplayerModal() {
     document.getElementById('multiplayerModal').style.display = 'none';
@@ -1445,13 +1485,14 @@ function closeMultiplayerModal() {
 // 重置双人模式UI
 function resetMultiplayerUI() {
     document.getElementById('multiplayerStep1').style.display = 'block';
+    document.getElementById('multiplayerStep1_2').style.display = 'none';
     document.getElementById('multiplayerStep2').style.display = 'none';
     document.getElementById('multiplayerStep3').style.display = 'none';
 }
 
 // 创建房间
 async function createRoom() {
-    document.getElementById('multiplayerStep1').style.display = 'none';
+    document.getElementById('multiplayerStep1_2').style.display = 'none';
     document.getElementById('multiplayerStep2').style.display = 'block';
     
     // 创建WebRTC连接
@@ -1517,22 +1558,35 @@ async function submitPeerCode() {
         return;
     }
     
-    console.log('收到的房间码:', peerCode.substring(0, 100) + '...');
+    console.log('收到的房间码长度:', peerCode.length);
+    console.log('收到的房间码前100字符:', peerCode.substring(0, 100) + '...');
+    console.log('收到的房间码后100字符:', peerCode.substring(peerCode.length - 100) + '...');
+    console.log('当前连接状态:', peerConnection?.connectionState);
     
     try {
-        const answer = JSON.parse(peerCode);
+        // 移除可能的换行符和空格
+        const cleanCode = peerCode.replace(/\s+/g, ' ').trim();
+        const answer = JSON.parse(cleanCode);
         console.log('解析成功:', answer.type);
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
-        document.getElementById('connectionStatus').textContent = '正在连接...';
+        
+        // 检查连接状态
+        if (peerConnection && (peerConnection.connectionState === 'new' || peerConnection.connectionState === 'connecting' || peerConnection.connectionState === 'have-local-offer')) {
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+            document.getElementById('connectionStatus').textContent = '正在连接...';
+        } else {
+            console.error('连接状态错误:', peerConnection?.connectionState);
+            showAlertModal('连接状态错误，请重新创建房间');
+        }
     } catch (error) {
         console.error('处理房间码失败:', error);
-        showAlertModal('房间码格式错误: ' + error.message);
+        console.error('错误位置附近的字符:', peerCode.substring(Math.max(0, 880), Math.min(peerCode.length, 900)));
+        showAlertModal('房间码格式错误: ' + error.message + '\n请确保完整复制了对方的房间码');
     }
 }
 
 // 加入房间
 function joinRoom() {
-    document.getElementById('multiplayerStep1').style.display = 'none';
+    document.getElementById('multiplayerStep1_2').style.display = 'none';
     document.getElementById('multiplayerStep3').style.display = 'block';
 }
 
@@ -1628,11 +1682,22 @@ function handleRemoteMessage(data) {
         case 'sync_state':
             handleRemoteSync(data);
             break;
+        case 'request_state':
+            handleRemoteStateRequest();
+            break;
+        case 'opponent_state':
+            showOpponentProgress(data);
+            break;
     }
 }
 
 // 处理远程放置碎块
 function handleRemotePiecePlaced(data) {
+    // 对战模式：不处理对方放置的碎块（独立游戏）
+    if (multiplayerMode === 'versus') {
+        return;
+    }
+    
     const globalId = data.globalId;
     const pieceData = data.pieceData;
     
@@ -1646,6 +1711,29 @@ function handleRemotePiecePlaced(data) {
     }
 }
 
+// 处理远程同步
+function handleRemoteSync(data) {
+    if (data.imagePath === CONFIG.currentImagePath &&
+        data.puzzleWidth === CONFIG.currentPuzzleWidth &&
+        data.puzzleHeight === CONFIG.currentPuzzleHeight) {
+        
+        // 合作模式：直接同步所有数据
+        if (data.multiplayerMode === 'coop' || multiplayerMode === 'coop') {
+            placedPiecesData = data.placedPiecesData || {};
+            placedCount = data.placedCount || 0;
+            createBoard();
+            createParts();
+        }
+        // 对战模式：只同步对方的模式信息，不覆盖本地进度
+        else if (data.multiplayerMode === 'versus' || multiplayerMode === 'versus') {
+            // 确保双方模式一致
+            if (data.multiplayerMode) {
+                multiplayerMode = data.multiplayerMode;
+            }
+        }
+    }
+}
+
 // 同步状态给对方
 function syncStateToRemote() {
     if (dataChannel && dataChannel.readyState === 'open') {
@@ -1655,21 +1743,45 @@ function syncStateToRemote() {
             placedCount: placedCount,
             imagePath: CONFIG.currentImagePath,
             puzzleWidth: CONFIG.currentPuzzleWidth,
-            puzzleHeight: CONFIG.currentPuzzleHeight
+            puzzleHeight: CONFIG.currentPuzzleHeight,
+            multiplayerMode: multiplayerMode,
+            playerId: playerId
         }));
     }
 }
 
-// 处理远程同步
-function handleRemoteSync(data) {
-    if (data.imagePath === CONFIG.currentImagePath &&
-        data.puzzleWidth === CONFIG.currentPuzzleWidth &&
-        data.puzzleHeight === CONFIG.currentPuzzleHeight) {
-        placedPiecesData = data.placedPiecesData || {};
-        placedCount = data.placedCount || 0;
-        createBoard();
-        createParts();
+// 查看对方进度
+function viewOpponentProgress() {
+    if (!isMultiplayer || multiplayerMode !== 'versus') return;
+    
+    // 发送请求获取对方状态
+    if (dataChannel && dataChannel.readyState === 'open') {
+        dataChannel.send(JSON.stringify({
+            type: 'request_state'
+        }));
+        
+        showAlertModal('正在获取对方进度...');
     }
+}
+
+// 处理远程状态请求
+function handleRemoteStateRequest() {
+    // 发送当前状态给对方
+    if (dataChannel && dataChannel.readyState === 'open') {
+        dataChannel.send(JSON.stringify({
+            type: 'opponent_state',
+            placedPiecesData: placedPiecesData,
+            placedCount: placedCount
+        }));
+    }
+}
+
+// 显示对方进度
+function showOpponentProgress(data) {
+    const totalPieces = CONFIG.currentPuzzleWidth * CONFIG.currentPuzzleHeight;
+    const progress = Math.round((data.placedCount / totalPieces) * 100);
+    
+    showAlertModal(`对方进度：${progress}%\n已完成 ${data.placedCount} / ${totalPieces} 块`);
 }
 
 // 发送放置碎块消息
@@ -1699,7 +1811,23 @@ function cancelConnection() {
 // 开始双人游戏
 function startMultiplayerGame() {
     isMultiplayer = true;
+    
+    // 设置玩家ID（创建者为1，加入者为2）
+    if (dataChannel) {
+        playerId = 1; // 创建者
+    } else {
+        playerId = 2; // 加入者
+    }
+    
     startGame();
+    
+    // 显示连接成功提示
+    showAlertModal(`连接成功！你是玩家 ${playerId}，模式：${multiplayerMode === 'coop' ? '合作' : '对战'}`);
+    
+    // 对战模式下显示查看对方按钮
+    if (multiplayerMode === 'versus') {
+        document.getElementById('viewOpponentButton').style.display = 'flex';
+    }
     
     // 延迟同步状态
     setTimeout(() => {
