@@ -698,6 +698,8 @@ function placeSubPiece(piece, slot, globalId) {
         id: parseInt(piece.dataset.id)
     };
     
+    placedCount++;
+    
     // 双人模式：同步给对方
     if (isMultiplayer) {
         sendPiecePlaced(globalId, placedPiecesData[globalId]);
@@ -709,6 +711,16 @@ function placeSubPiece(piece, slot, globalId) {
     
     // 检查分区是否完成
     checkPartitionComplete();
+    
+    // 整体胜利检测
+    const totalPieces = CONFIG.currentPuzzleWidth * CONFIG.currentPuzzleHeight;
+    if (placedCount === totalPieces) {
+        // 对战模式：通知对方游戏结束
+        if (isMultiplayer && multiplayerMode === 'versus') {
+            sendGameOver();
+        }
+        showWinModal('win');
+    }
     
     saveProgress();
 }
@@ -1116,7 +1128,11 @@ function placePiece(piece, slot) {
     // 胜利检测
     const totalPieces = CONFIG.currentPuzzleWidth * CONFIG.currentPuzzleHeight;
     if (placedCount === totalPieces) {
-        showWinModal();
+        // 对战模式：通知对方游戏结束
+        if (isMultiplayer && multiplayerMode === 'versus') {
+            sendGameOver();
+        }
+        showWinModal('win');
     }
 }
 
@@ -1166,16 +1182,35 @@ function resetGame() {
 }
 
 // ==================== 胜利弹窗 ====================
-function showWinModal() {
+function showWinModal(result) {
     // 停止游戏计时器
     stopGameTimer();
     
     const modal = document.createElement('div');
     modal.className = 'modal';
+    
+    let title, message, color;
+    
+    if (isMultiplayer && multiplayerMode === 'versus') {
+        if (result === 'win') {
+            title = '🏆 恭喜胜利！';
+            message = '你比对手先完成拼图！';
+            color = '#4CAF50';
+        } else {
+            title = '😔 游戏结束';
+            message = '对手先完成了拼图！';
+            color = '#f44336';
+        }
+    } else {
+        title = '🎉 恭喜完成拼图！';
+        message = '您成功还原了所有碎片！';
+        color = '#4CAF50';
+    }
+    
     modal.innerHTML = `
         <div class="modal-content">
-            <h2 style="color: #4CAF50; margin-bottom: 20px;">🎉 恭喜完成拼图！</h2>
-            <p>您成功还原了所有碎片！</p>
+            <h2 style="color: ${color}; margin-bottom: 20px;">${title}</h2>
+            <p>${message}</p>
             <button class="reset-btn" onclick="this.parentElement.parentElement.remove(); resetGame();" style="margin-top: 20px;">
                 再来一局
             </button>
@@ -1676,6 +1711,9 @@ function setupDataChannel(channel) {
 // 处理远程消息
 function handleRemoteMessage(data) {
     switch (data.type) {
+        case 'game_config':
+            handleRemoteGameConfig(data);
+            break;
         case 'piece_placed':
             handleRemotePiecePlaced(data);
             break;
@@ -1688,7 +1726,66 @@ function handleRemoteMessage(data) {
         case 'opponent_state':
             showOpponentProgress(data);
             break;
+        case 'game_over':
+            handleRemoteGameOver(data);
+            break;
     }
+}
+
+// 发送游戏配置
+function sendGameConfig() {
+    if (dataChannel && dataChannel.readyState === 'open') {
+        const config = {
+            type: 'game_config',
+            imagePath: selectedImagePath,
+            puzzleWidth: parseInt(document.getElementById('puzzleWidth').value) || 4,
+            puzzleHeight: parseInt(document.getElementById('puzzleHeight').value) || 5,
+            isTimerEnabled: document.getElementById('timerCheckbox').checked,
+            timerMinutes: parseInt(document.getElementById('timerMinutes').value) || 10,
+            multiplayerMode: multiplayerMode
+        };
+        
+        dataChannel.send(JSON.stringify(config));
+        console.log('发送游戏配置:', config);
+    }
+}
+
+// 处理远程游戏配置
+function handleRemoteGameConfig(data) {
+    console.log('收到游戏配置:', data);
+    
+    // 更新本地配置
+    selectedImagePath = data.imagePath;
+    CONFIG.currentImagePath = data.imagePath;
+    CONFIG.currentPuzzleWidth = data.puzzleWidth;
+    CONFIG.currentPuzzleHeight = data.puzzleHeight;
+    multiplayerMode = data.multiplayerMode;
+    
+    // 更新UI
+    document.getElementById('puzzleWidth').value = data.puzzleWidth;
+    document.getElementById('puzzleHeight').value = data.puzzleHeight;
+    
+    if (data.isTimerEnabled) {
+        document.getElementById('timerCheckbox').checked = true;
+        document.getElementById('timerMinutes').value = data.timerMinutes;
+        document.getElementById('timerMinutes').style.display = 'inline-block';
+    }
+    
+    // 更新图片选择
+    document.querySelectorAll('.image-item').forEach(item => {
+        item.classList.remove('selected');
+        if (item.dataset.image === data.imagePath) {
+            item.classList.add('selected');
+        }
+    });
+    
+    // 保存配置
+    localStorage.setItem('puzzle_game_last_image', selectedImagePath);
+    
+    // 重新开始游戏
+    startGame();
+    
+    showAlertModal(`已同步游戏配置！\n图片: ${data.imagePath}\n大小: ${data.puzzleWidth}x${data.puzzleHeight}\n模式: ${data.multiplayerMode === 'coop' ? '合作' : '对战'}`);
 }
 
 // 处理远程放置碎块
@@ -1705,8 +1802,21 @@ function handleRemotePiecePlaced(data) {
         placedPiecesData[globalId] = pieceData;
         partitionedPieces[globalId] = true;
         placedCount++;
-        createBoard();
-        createParts();
+        
+        // 找到对应的槽位并放置碎块
+        const slot = document.querySelector(`.puzzle-slot[data-expected-id="${globalId}"]`);
+        if (slot && !slot.classList.contains('filled')) {
+            const piece = createPlacedPiece(pieceData);
+            slot.appendChild(piece);
+            slot.classList.add('filled');
+            
+            // 从零件区移除对应的零件
+            const partItem = document.querySelector(`.part-item[data-id="${globalId}"]`);
+            if (partItem) {
+                partItem.remove();
+            }
+        }
+        
         saveProgress();
     }
 }
@@ -1784,6 +1894,30 @@ function showOpponentProgress(data) {
     showAlertModal(`对方进度：${progress}%\n已完成 ${data.placedCount} / ${totalPieces} 块`);
 }
 
+// 发送游戏结束
+function sendGameOver() {
+    if (dataChannel && dataChannel.readyState === 'open') {
+        dataChannel.send(JSON.stringify({
+            type: 'game_over',
+            winnerId: playerId,
+            winnerCount: placedCount
+        }));
+        console.log('发送游戏结束消息');
+    }
+}
+
+// 处理远程游戏结束
+function handleRemoteGameOver(data) {
+    console.log('收到游戏结束消息:', data);
+    
+    // 判断结果
+    if (data.winnerId === playerId) {
+        showWinModal('win');
+    } else {
+        showWinModal('lose');
+    }
+}
+
 // 发送放置碎块消息
 function sendPiecePlaced(globalId, pieceData) {
     if (dataChannel && dataChannel.readyState === 'open') {
@@ -1815,6 +1949,11 @@ function startMultiplayerGame() {
     // 设置玩家ID（创建者为1，加入者为2）
     if (dataChannel) {
         playerId = 1; // 创建者
+        
+        // 创建者发送游戏配置给加入者
+        setTimeout(() => {
+            sendGameConfig();
+        }, 500);
     } else {
         playerId = 2; // 加入者
     }
@@ -1829,8 +1968,10 @@ function startMultiplayerGame() {
         document.getElementById('viewOpponentButton').style.display = 'flex';
     }
     
-    // 延迟同步状态
-    setTimeout(() => {
-        syncStateToRemote();
-    }, 1000);
+    // 合作模式下延迟同步状态
+    if (multiplayerMode === 'coop') {
+        setTimeout(() => {
+            syncStateToRemote();
+        }, 1500);
+    }
 }
