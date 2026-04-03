@@ -1950,15 +1950,20 @@ function startMultiplayerGame() {
     if (dataChannel) {
         playerId = 1; // 创建者
         
+        // 创建者立即开始游戏
+        startGame();
+        
         // 创建者发送游戏配置给加入者
         setTimeout(() => {
             sendGameConfig();
         }, 500);
     } else {
         playerId = 2; // 加入者
+        
+        // 加入者等待接收游戏配置后再开始游戏
+        // handleRemoteGameConfig 会调用 startGame()
+        console.log('加入者等待游戏配置...');
     }
-    
-    startGame();
     
     // 显示连接成功提示
     showAlertModal(`连接成功！你是玩家 ${playerId}，模式：${multiplayerMode === 'coop' ? '合作' : '对战'}`);
@@ -1968,8 +1973,8 @@ function startMultiplayerGame() {
         document.getElementById('viewOpponentButton').style.display = 'flex';
     }
     
-    // 合作模式下延迟同步状态
-    if (multiplayerMode === 'coop') {
+    // 合作模式下延迟同步状态（只有创建者需要）
+    if (multiplayerMode === 'coop' && playerId === 1) {
         setTimeout(() => {
             syncStateToRemote();
         }, 1500);
