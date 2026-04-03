@@ -1060,6 +1060,11 @@ function handlePieceClick(e) {
     const clickedPiece = e.target.closest('.part-item');
     clickedPiece.classList.add('selected');
     selectedPiece = clickedPiece;
+    
+    // 合作模式：同步选择状态给对方
+    if (isMultiplayer && multiplayerMode === 'coop') {
+        sendPieceSelected(parseInt(clickedPiece.dataset.id));
+    }
 }
 
 // ==================== 点击放置到槽位 ====================
@@ -1357,8 +1362,8 @@ function startGame() {
     const timerCheckbox = document.getElementById('timerCheckbox');
     const timerTimeInput = document.getElementById('timerTimeInput');
     
-    let width = 6;
-    let height = 10;
+    let width = CONFIG.currentPuzzleWidth || 6;
+    let height = CONFIG.currentPuzzleHeight || 10;
     
     if (widthInput && heightInput) {
         width = parseInt(widthInput.value) || 6;
@@ -1402,9 +1407,13 @@ function startGame() {
     
     // 读取计时设置（如果有旧进度，用旧的；否则用新的）
     if (!hasExistingProgress) {
-        isTimerEnabled = timerCheckbox && timerCheckbox.checked;
-        if (isTimerEnabled && timerTimeInput) {
-            const minutes = parseInt(timerTimeInput.value) || 10;
+        // 优先使用同步的配置
+        if (timerCheckbox) {
+            isTimerEnabled = timerCheckbox.checked;
+        }
+        // 从同步的配置中获取计时器时间
+        if (isTimerEnabled) {
+            const minutes = parseInt(document.getElementById('timerMinutes')?.value) || 10;
             remainingTime = minutes * 60;
         } else {
             remainingTime = 0;
@@ -1719,6 +1728,9 @@ function handleRemoteMessage(data) {
             break;
         case 'piece_placed':
             handleRemotePiecePlaced(data);
+            break;
+        case 'piece_selected':
+            handleRemotePieceSelected(data);
             break;
         case 'sync_state':
             handleRemoteSync(data);
@@ -2041,6 +2053,18 @@ function sendGameOver() {
     }
 }
 
+// 发送选择零件消息
+function sendPieceSelected(pieceId) {
+    if (dataChannel && dataChannel.readyState === 'open') {
+        dataChannel.send(JSON.stringify({
+            type: 'piece_selected',
+            pieceId: pieceId,
+            playerId: playerId
+        }));
+        console.log('发送选择零件消息:', pieceId);
+    }
+}
+
 // 处理远程游戏结束
 function handleRemoteGameOver(data) {
     console.log('收到游戏结束消息:', data);
@@ -2050,6 +2074,33 @@ function handleRemoteGameOver(data) {
         showWinModal('win');
     } else {
         showWinModal('lose');
+    }
+}
+
+// 处理远程选择零件
+function handleRemotePieceSelected(data) {
+    console.log('收到远程选择零件:', data);
+    
+    // 合作模式：显示对方的选择
+    if (multiplayerMode === 'coop') {
+        // 清除所有选择状态
+        document.querySelectorAll('.part-item').forEach(p => {
+            p.classList.remove('selected');
+            p.classList.remove('remote-selected');
+        });
+        
+        // 找到被选择的零件并添加远程选择样式
+        const piece = document.querySelector(`.part-item[data-id="${data.pieceId}"]`);
+        if (piece) {
+            piece.classList.add('remote-selected');
+            
+            // 根据对方的玩家ID设置颜色
+            if (data.playerId === 1) {
+                piece.style.boxShadow = '0 0 20px 8px rgba(255, 0, 0, 0.8)';
+            } else if (data.playerId === 2) {
+                piece.style.boxShadow = '0 0 20px 8px rgba(0, 0, 255, 0.8)';
+            }
+        }
     }
 }
 
