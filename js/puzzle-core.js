@@ -2001,7 +2001,7 @@ function showOpponentProgress(data) {
     boardContainer.style.aspectRatio = `${CONFIG.currentPuzzleWidth} / ${CONFIG.currentPuzzleHeight}`;
     
     // 生成拼图格子
-    for (let i = 1; i <= totalPieces; i++) {
+    for (let i = 0; i < totalPieces; i++) {
         const slot = document.createElement('div');
         slot.style.aspectRatio = '1';
         slot.style.border = '1px solid #ddd';
@@ -2083,10 +2083,13 @@ function handleRemotePieceSelected(data) {
     
     // 合作模式：显示对方的选择
     if (multiplayerMode === 'coop') {
-        // 清除所有选择状态
+        // 清除之前的远程选择状态（不清除自己的选择）
         document.querySelectorAll('.part-item').forEach(p => {
-            p.classList.remove('selected');
             p.classList.remove('remote-selected');
+            // 只清除远程选择的样式，不清除自己的selected
+            if (!p.classList.contains('selected')) {
+                p.style.boxShadow = '';
+            }
         });
         
         // 找到被选择的零件并添加远程选择样式
