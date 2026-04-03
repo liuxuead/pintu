@@ -1762,24 +1762,36 @@ function handleRemoteGameConfig(data) {
     CONFIG.currentPuzzleWidth = data.puzzleWidth;
     CONFIG.currentPuzzleHeight = data.puzzleHeight;
     multiplayerMode = data.multiplayerMode;
+    isTimerEnabled = data.isTimerEnabled || false;
     
-    // 更新UI
-    document.getElementById('puzzleWidth').value = data.puzzleWidth;
-    document.getElementById('puzzleHeight').value = data.puzzleHeight;
+    // 尝试更新UI（如果元素存在）
+    const puzzleWidthEl = document.getElementById('puzzleWidth');
+    if (puzzleWidthEl) puzzleWidthEl.value = data.puzzleWidth;
+    
+    const puzzleHeightEl = document.getElementById('puzzleHeight');
+    if (puzzleHeightEl) puzzleHeightEl.value = data.puzzleHeight;
     
     if (data.isTimerEnabled) {
-        document.getElementById('timerCheckbox').checked = true;
-        document.getElementById('timerMinutes').value = data.timerMinutes;
-        document.getElementById('timerMinutes').style.display = 'inline-block';
+        const timerCheckboxEl = document.getElementById('timerCheckbox');
+        if (timerCheckboxEl) timerCheckboxEl.checked = true;
+        
+        const timerMinutesEl = document.getElementById('timerMinutes');
+        if (timerMinutesEl) {
+            timerMinutesEl.value = data.timerMinutes;
+            timerMinutesEl.style.display = 'inline-block';
+        }
     }
     
-    // 更新图片选择
-    document.querySelectorAll('.image-item').forEach(item => {
-        item.classList.remove('selected');
-        if (item.dataset.image === data.imagePath) {
-            item.classList.add('selected');
-        }
-    });
+    // 尝试更新图片选择（如果元素存在）
+    const imageItems = document.querySelectorAll('.image-item');
+    if (imageItems.length > 0) {
+        imageItems.forEach(item => {
+            item.classList.remove('selected');
+            if (item.dataset.image === data.imagePath) {
+                item.classList.add('selected');
+            }
+        });
+    }
     
     // 保存配置
     localStorage.setItem('puzzle_game_last_image', selectedImagePath);
