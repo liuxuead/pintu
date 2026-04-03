@@ -15,6 +15,9 @@ let CONFIG = {
 // 当前选中的图片
 let selectedImagePath = 'assets/fd.png';
 
+// 上传的图片数据（用于双人模式传输）
+let uploadedImageData = null;
+
 // 页面加载时恢复上次选择的图片
 window.addEventListener('DOMContentLoaded', () => {
     const savedImage = localStorage.getItem('puzzle_game_last_image');
@@ -63,6 +66,9 @@ function handleImageUpload(input) {
     const reader = new FileReader();
     reader.onload = function(e) {
         const imageUrl = e.target.result;
+        
+        // 保存上传的图片数据（用于双人模式传输）
+        uploadedImageData = imageUrl;
         
         // 创建新的图片项
         const imageList = document.querySelector('.image-list');
@@ -1760,6 +1766,12 @@ function sendGameConfig() {
             multiplayerMode: multiplayerMode
         };
         
+        // 如果是本地上传的图片，添加图片数据
+        if (selectedImagePath.startsWith('data:')) {
+            config.imageData = selectedImagePath;
+            console.log('发送本地图片数据，长度:', selectedImagePath.length);
+        }
+        
         dataChannel.send(JSON.stringify(config));
         console.log('发送游戏配置:', config);
     } else {
@@ -1771,9 +1783,63 @@ function sendGameConfig() {
 function handleRemoteGameConfig(data) {
     console.log('收到游戏配置:', data);
     
+    // 如果是本地图片数据，添加到图片列表
+    if (data.imageData && data.imageData.startsWith('data:')) {
+        console.log('收到本地图片数据，长度:', data.imageData.length);
+        
+        // 检查是否已存在相同的图片
+        const imageList = document.querySelector('.image-list');
+        const existingImage = Array.from(imageList.querySelectorAll('.image-item')).find(
+            item => item.dataset.image === data.imageData
+        );
+        
+        if (!existingImage) {
+            // 创建新的图片项
+            const newImageItem = document.createElement('div');
+            newImageItem.className = 'image-item selected';
+            newImageItem.dataset.image = data.imageData;
+            newImageItem.onclick = function() { selectImage(this); };
+            
+            newImageItem.innerHTML = `
+                <img src="${data.imageData}" alt="对方图片">
+                <div class="image-label">对方图片</div>
+            `;
+            
+            // 移除所有选中状态
+            document.querySelectorAll('.image-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            
+            // 添加到图片列表的最前面
+            if (imageList.firstChild) {
+                imageList.insertBefore(newImageItem, imageList.firstChild);
+            } else {
+                imageList.appendChild(newImageItem);
+            }
+            
+            // 更新选中的图片
+            selectedImagePath = data.imageData;
+            uploadedImageData = data.imageData;
+        } else {
+            // 图片已存在，直接选中
+            selectedImagePath = data.imageData;
+            uploadedImageData = data.imageData;
+            
+            // 更新选中状态
+            document.querySelectorAll('.image-item').forEach(item => {
+                item.classList.remove('selected');
+                if (item.dataset.image === data.imageData) {
+                    item.classList.add('selected');
+                }
+            });
+        }
+    } else {
+        // 使用原始图片路径
+        selectedImagePath = data.imagePath;
+    }
+    
     // 更新本地配置
-    selectedImagePath = data.imagePath;
-    CONFIG.currentImagePath = data.imagePath;
+    CONFIG.currentImagePath = selectedImagePath;
     CONFIG.currentPuzzleWidth = data.puzzleWidth;
     CONFIG.currentPuzzleHeight = data.puzzleHeight;
     multiplayerMode = data.multiplayerMode;
