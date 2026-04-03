@@ -695,7 +695,8 @@ function placeSubPiece(piece, slot, globalId) {
         imageUrl: piece.style.backgroundImage,
         backgroundSize: piece.style.backgroundSize,
         backgroundPosition: piece.style.backgroundPosition,
-        id: parseInt(piece.dataset.id)
+        id: parseInt(piece.dataset.id),
+        playerId: isMultiplayer ? playerId : null
     };
     
     placedCount++;
@@ -836,9 +837,11 @@ function createPlacedPiece(data) {
     // 添加玩家标识光效
     if (data.playerId) {
         if (data.playerId === 1) {
-            piece.style.boxShadow = '0 0 15px 5px rgba(255, 0, 0, 0.6)';
+            piece.style.boxShadow = '0 0 20px 8px rgba(255, 0, 0, 0.8), inset 0 0 10px rgba(255, 0, 0, 0.5)';
+            piece.style.border = '3px solid rgba(255, 0, 0, 0.9)';
         } else if (data.playerId === 2) {
-            piece.style.boxShadow = '0 0 15px 5px rgba(0, 0, 255, 0.6)';
+            piece.style.boxShadow = '0 0 20px 8px rgba(0, 0, 255, 0.8), inset 0 0 10px rgba(0, 0, 255, 0.5)';
+            piece.style.border = '3px solid rgba(0, 0, 255, 0.9)';
         }
     }
     
