@@ -1368,10 +1368,12 @@ function startGame() {
     const timerCheckbox = document.getElementById('timerCheckbox');
     const timerTimeInput = document.getElementById('timerTimeInput');
     
+    // 优先使用已同步的配置，只有在入口界面时才读取输入框
     let width = CONFIG.currentPuzzleWidth || 6;
     let height = CONFIG.currentPuzzleHeight || 10;
     
-    if (widthInput && heightInput) {
+    // 只在入口界面时读取输入框的值
+    if (widthInput && heightInput && document.getElementById('startScreen').style.display !== 'none') {
         width = parseInt(widthInput.value) || 6;
         height = parseInt(heightInput.value) || 10;
     }
@@ -1868,7 +1870,7 @@ function handleRemoteGameConfig(data) {
     if (imageItems.length > 0) {
         imageItems.forEach(item => {
             item.classList.remove('selected');
-            if (item.dataset.image === data.imagePath) {
+            if (item.dataset.image === selectedImagePath) {
                 item.classList.add('selected');
             }
         });
