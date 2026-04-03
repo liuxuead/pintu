@@ -1901,6 +1901,12 @@ function handleRemoteSync(data) {
 
 // 同步状态给对方
 function syncStateToRemote() {
+    // 对战模式：不发送实时同步状态
+    if (multiplayerMode === 'versus') {
+        console.log('对战模式：不发送实时同步状态');
+        return;
+    }
+    
     console.log('发送同步状态，placedCount:', placedCount);
     if (dataChannel && dataChannel.readyState === 'open') {
         const syncData = {
@@ -1948,10 +1954,79 @@ function handleRemoteStateRequest() {
 
 // 显示对方进度
 function showOpponentProgress(data) {
+    console.log('显示对方进度:', data);
+    
+    // 创建模态框
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'flex';
+    modal.style.zIndex = '9999';
+    
+    const content = document.createElement('div');
+    content.className = 'modal-content';
+    content.style.maxWidth = '90vw';
+    content.style.maxHeight = '90vh';
+    content.style.overflow = 'auto';
+    
+    const title = document.createElement('h2');
+    title.textContent = '对方拼图进度';
+    title.style.color = '#667eea';
+    title.style.marginBottom = '20px';
+    
+    const progressInfo = document.createElement('p');
     const totalPieces = CONFIG.currentPuzzleWidth * CONFIG.currentPuzzleHeight;
     const progress = Math.round((data.placedCount / totalPieces) * 100);
+    progressInfo.textContent = `进度：${progress}% (${data.placedCount} / ${totalPieces} 块)`;
+    progressInfo.style.marginBottom = '20px';
     
-    showAlertModal(`对方进度：${progress}%\n已完成 ${data.placedCount} / ${totalPieces} 块`);
+    // 创建拼图布局容器
+    const boardContainer = document.createElement('div');
+    boardContainer.style.display = 'grid';
+    boardContainer.style.gridTemplateColumns = `repeat(${CONFIG.currentPuzzleWidth}, 1fr)`;
+    boardContainer.style.gap = '2px';
+    boardContainer.style.margin = '20px 0';
+    boardContainer.style.maxWidth = '400px';
+    boardContainer.style.aspectRatio = `${CONFIG.currentPuzzleWidth} / ${CONFIG.currentPuzzleHeight}`;
+    
+    // 生成拼图格子
+    for (let i = 1; i <= totalPieces; i++) {
+        const slot = document.createElement('div');
+        slot.style.aspectRatio = '1';
+        slot.style.border = '1px solid #ddd';
+        slot.style.borderRadius = '2px';
+        slot.style.background = '#f5f5f5';
+        
+        // 检查该位置是否已放置
+        if (data.placedPiecesData && data.placedPiecesData[i]) {
+            const pieceData = data.placedPiecesData[i];
+            slot.style.backgroundImage = pieceData.imageUrl;
+            slot.style.backgroundSize = pieceData.backgroundSize;
+            slot.style.backgroundPosition = pieceData.backgroundPosition;
+            slot.style.backgroundRepeat = 'no-repeat';
+            slot.style.border = '2px solid #4CAF50';
+        }
+        
+        boardContainer.appendChild(slot);
+    }
+    
+    const closeHint = document.createElement('p');
+    closeHint.textContent = '点击任意处关闭';
+    closeHint.style.color = '#999';
+    closeHint.style.textAlign = 'center';
+    closeHint.style.marginTop = '20px';
+    
+    content.appendChild(title);
+    content.appendChild(progressInfo);
+    content.appendChild(boardContainer);
+    content.appendChild(closeHint);
+    modal.appendChild(content);
+    
+    // 点击关闭
+    modal.addEventListener('click', () => {
+        document.body.removeChild(modal);
+    });
+    
+    document.body.appendChild(modal);
 }
 
 // 发送游戏结束
@@ -1980,6 +2055,12 @@ function handleRemoteGameOver(data) {
 
 // 发送放置碎块消息
 function sendPiecePlaced(globalId, pieceData) {
+    // 对战模式：不发送放置碎块消息
+    if (multiplayerMode === 'versus') {
+        console.log('对战模式：不发送放置碎块消息');
+        return;
+    }
+    
     if (dataChannel && dataChannel.readyState === 'open') {
         dataChannel.send(JSON.stringify({
             type: 'piece_placed',
