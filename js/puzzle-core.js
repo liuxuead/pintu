@@ -1869,11 +1869,13 @@ function handleRemoteSync(data) {
         }
         if (data.puzzleWidth) {
             CONFIG.currentPuzzleWidth = data.puzzleWidth;
-            document.getElementById('puzzleWidth').value = data.puzzleWidth;
+            const puzzleWidthEl = document.getElementById('puzzleWidth');
+            if (puzzleWidthEl) puzzleWidthEl.value = data.puzzleWidth;
         }
         if (data.puzzleHeight) {
             CONFIG.currentPuzzleHeight = data.puzzleHeight;
-            document.getElementById('puzzleHeight').value = data.puzzleHeight;
+            const puzzleHeightEl = document.getElementById('puzzleHeight');
+            if (puzzleHeightEl) puzzleHeightEl.value = data.puzzleHeight;
         }
         
         placedPiecesData = data.placedPiecesData || {};
