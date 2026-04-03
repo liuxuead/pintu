@@ -113,10 +113,12 @@ function toggleTimerInput() {
     const checkbox = document.getElementById('timerCheckbox');
     const container = document.getElementById('timerTimeContainer');
     
-    if (checkbox.checked) {
-        container.style.display = 'flex';
-    } else {
-        container.style.display = 'none';
+    if (checkbox && container) {
+        if (checkbox.checked) {
+            container.style.display = 'flex';
+        } else {
+            container.style.display = 'none';
+        }
     }
 }
 
