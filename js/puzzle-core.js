@@ -1738,15 +1738,17 @@ function sendGameConfig() {
         const config = {
             type: 'game_config',
             imagePath: selectedImagePath,
-            puzzleWidth: parseInt(document.getElementById('puzzleWidth').value) || 4,
-            puzzleHeight: parseInt(document.getElementById('puzzleHeight').value) || 5,
-            isTimerEnabled: document.getElementById('timerCheckbox').checked,
-            timerMinutes: parseInt(document.getElementById('timerMinutes').value) || 10,
+            puzzleWidth: CONFIG.currentPuzzleWidth,
+            puzzleHeight: CONFIG.currentPuzzleHeight,
+            isTimerEnabled: isTimerEnabled,
+            timerMinutes: parseInt(document.getElementById('timerMinutes')?.value) || 10,
             multiplayerMode: multiplayerMode
         };
         
         dataChannel.send(JSON.stringify(config));
         console.log('发送游戏配置:', config);
+    } else {
+        console.log('数据通道未打开，无法发送配置');
     }
 }
 
