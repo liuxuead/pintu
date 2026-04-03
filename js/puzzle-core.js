@@ -1790,13 +1790,18 @@ function handleRemoteGameConfig(data) {
 
 // 处理远程放置碎块
 function handleRemotePiecePlaced(data) {
+    console.log('收到远程放置碎块:', data);
+    
     // 对战模式：不处理对方放置的碎块（独立游戏）
     if (multiplayerMode === 'versus') {
+        console.log('对战模式：忽略远程放置');
         return;
     }
     
     const globalId = data.globalId;
     const pieceData = data.pieceData;
+    
+    console.log('处理放置，globalId:', globalId, '当前placedCount:', placedCount);
     
     if (!placedPiecesData[globalId]) {
         placedPiecesData[globalId] = pieceData;
@@ -1805,6 +1810,8 @@ function handleRemotePiecePlaced(data) {
         
         // 找到对应的槽位并放置碎块
         const slot = document.querySelector(`.puzzle-slot[data-expected-id="${globalId}"]`);
+        console.log('找到槽位:', slot);
+        
         if (slot && !slot.classList.contains('filled')) {
             const piece = createPlacedPiece(pieceData);
             slot.appendChild(piece);
@@ -1814,40 +1821,70 @@ function handleRemotePiecePlaced(data) {
             const partItem = document.querySelector(`.part-item[data-id="${globalId}"]`);
             if (partItem) {
                 partItem.remove();
+                console.log('已移除零件:', globalId);
             }
+            
+            console.log('放置完成，新placedCount:', placedCount);
+        } else {
+            console.log('槽位不存在或已填充');
         }
         
         saveProgress();
+    } else {
+        console.log('该位置已有碎块:', globalId);
     }
 }
 
 // 处理远程同步
 function handleRemoteSync(data) {
-    if (data.imagePath === CONFIG.currentImagePath &&
-        data.puzzleWidth === CONFIG.currentPuzzleWidth &&
-        data.puzzleHeight === CONFIG.currentPuzzleHeight) {
+    console.log('收到同步状态:', data);
+    console.log('当前配置:', {
+        imagePath: CONFIG.currentImagePath,
+        puzzleWidth: CONFIG.currentPuzzleWidth,
+        puzzleHeight: CONFIG.currentPuzzleHeight
+    });
+    
+    // 合作模式：直接同步所有数据（不需要严格匹配配置）
+    if (data.multiplayerMode === 'coop' || multiplayerMode === 'coop') {
+        console.log('合作模式：同步数据');
         
-        // 合作模式：直接同步所有数据
-        if (data.multiplayerMode === 'coop' || multiplayerMode === 'coop') {
-            placedPiecesData = data.placedPiecesData || {};
-            placedCount = data.placedCount || 0;
-            createBoard();
-            createParts();
+        // 更新配置以匹配创建者
+        if (data.imagePath) {
+            CONFIG.currentImagePath = data.imagePath;
+            selectedImagePath = data.imagePath;
         }
-        // 对战模式：只同步对方的模式信息，不覆盖本地进度
-        else if (data.multiplayerMode === 'versus' || multiplayerMode === 'versus') {
-            // 确保双方模式一致
-            if (data.multiplayerMode) {
-                multiplayerMode = data.multiplayerMode;
-            }
+        if (data.puzzleWidth) {
+            CONFIG.currentPuzzleWidth = data.puzzleWidth;
+            document.getElementById('puzzleWidth').value = data.puzzleWidth;
+        }
+        if (data.puzzleHeight) {
+            CONFIG.currentPuzzleHeight = data.puzzleHeight;
+            document.getElementById('puzzleHeight').value = data.puzzleHeight;
+        }
+        
+        placedPiecesData = data.placedPiecesData || {};
+        placedCount = data.placedCount || 0;
+        
+        // 重新创建游戏
+        createBoard();
+        createParts();
+        
+        console.log('同步完成，placedCount:', placedCount);
+    }
+    // 对战模式：只同步对方的模式信息，不覆盖本地进度
+    else if (data.multiplayerMode === 'versus' || multiplayerMode === 'versus') {
+        // 确保双方模式一致
+        if (data.multiplayerMode) {
+            multiplayerMode = data.multiplayerMode;
         }
     }
 }
 
 // 同步状态给对方
 function syncStateToRemote() {
+    console.log('发送同步状态，placedCount:', placedCount);
     if (dataChannel && dataChannel.readyState === 'open') {
-        dataChannel.send(JSON.stringify({
+        const syncData = {
             type: 'sync_state',
             placedPiecesData: placedPiecesData,
             placedCount: placedCount,
@@ -1856,7 +1893,11 @@ function syncStateToRemote() {
             puzzleHeight: CONFIG.currentPuzzleHeight,
             multiplayerMode: multiplayerMode,
             playerId: playerId
-        }));
+        };
+        dataChannel.send(JSON.stringify(syncData));
+        console.log('同步状态已发送:', syncData);
+    } else {
+        console.log('数据通道未打开，无法同步');
     }
 }
 
